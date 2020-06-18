@@ -1,4 +1,4 @@
-/* starting with delta-less FED to get the semantics right */
+/* starting with delta-less ZED to get the semantics right */
 
 type hole = unit;
 
@@ -247,31 +247,31 @@ let step = (c: config): option(config) =>
   | _ => None
   };
 
-let vidFromFEDLang = vid => vid;
+let vidFromZEDLang = vid => vid;
 
-let intFromFEDLang = int => int;
+let intFromZEDLang = int => int;
 
-let rec lambdaFromFEDLang = ({vid, exp}: FEDLang.lambda): lambda => {
-  vid: vidFromFEDLang(vid),
-  exp: expFromFEDLang(exp),
+let rec lambdaFromZEDLang = ({vid, exp}: ZEDLang.lambda): lambda => {
+  vid: vidFromZEDLang(vid),
+  exp: expFromZEDLang(exp),
 }
 
-and aexpFromFEDLang = (aexp: FEDLang.aexp): aexp =>
+and aexpFromZEDLang = (aexp: ZEDLang.aexp): aexp =>
   switch (aexp) {
-  | Var(vid) => {op: AExp(Var(vidFromFEDLang(vid))), args: []}
-  | App(aexp1, aexp2) => {op: AExp(App), args: List.map(aexpFromFEDLang, [aexp1, aexp2])}
-  | Lam(lambda) => {op: AExp(Lam(lambdaFromFEDLang(lambda))), args: []}
-  | Num(int) => {op: AExp(Num(intFromFEDLang(int))), args: []}
-  | Add(aexp1, aexp2) => {op: AExp(Add), args: List.map(aexpFromFEDLang, [aexp1, aexp2])}
-  | Bracket(exp) => {op: AExp(Bracket(expFromFEDLang(exp))), args: []}
+  | Var(vid) => {op: AExp(Var(vidFromZEDLang(vid))), args: []}
+  | App(aexp1, aexp2) => {op: AExp(App), args: List.map(aexpFromZEDLang, [aexp1, aexp2])}
+  | Lam(lambda) => {op: AExp(Lam(lambdaFromZEDLang(lambda))), args: []}
+  | Num(int) => {op: AExp(Num(intFromZEDLang(int))), args: []}
+  | Add(aexp1, aexp2) => {op: AExp(Add), args: List.map(aexpFromZEDLang, [aexp1, aexp2])}
+  | Bracket(exp) => {op: AExp(Bracket(expFromZEDLang(exp))), args: []}
   }
 
-and expFromFEDLang = (exp: FEDLang.exp): exp =>
+and expFromZEDLang = (exp: ZEDLang.exp): exp =>
   switch (exp) {
-  | Lift(aexp) => {op: Exp(Lift(aexpFromFEDLang(aexp))), args: []}
+  | Lift(aexp) => {op: Exp(Lift(aexpFromZEDLang(aexp))), args: []}
   | Let(vid, aexp, exp) => {
-      op: Exp(Let(vidFromFEDLang(vid), expFromFEDLang(exp))),
-      args: List.map(aexpFromFEDLang, [aexp]),
+      op: Exp(Let(vidFromZEDLang(vid), expFromZEDLang(exp))),
+      args: List.map(aexpFromZEDLang, [aexp]),
     }
   };
 

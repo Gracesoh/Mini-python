@@ -1,5 +1,5 @@
 {
-  "name": "reason-react-examples",
+  "name": "zed",
   "reason": {
     "react-jsx": 3
   },
@@ -16,7 +16,7 @@
   "namespace": true,
   "bs-dependencies": [
     "reason-react",
-    "sidewinder2"
+    "sidewinder"
   ],
   "refmt": 3
 }
