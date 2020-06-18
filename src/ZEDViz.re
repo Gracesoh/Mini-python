@@ -4,297 +4,319 @@ open ZED;
 
 /* TODO: remove flow argument */
 
+let orHole = on =>
+  switch (on) {
+  | None => Theia.hole
+  | Some(n) => n
+  };
+
 let vizVid = (vid: vid) =>
-  ConfigIR.mk(~name="vid", ~nodes=None, ~render=_ => Theia.str(vid), ());
+  Some(ConfigIR.mk(~name="vid", ~nodes=[], ~render=_ => Theia.str(vid), ()));
 
 let vizInt = (int: int) =>
-  ConfigIR.mk(~name="int", ~nodes=None, ~render=_ => Theia.str(string_of_int(int)), ());
+  Some(ConfigIR.mk(~name="int", ~nodes=[], ~render=_ => Theia.str(string_of_int(int)), ()));
 
-// let rec vizZExp = ({op, args}: zexp('a)) =>
-// ConfigIR.mk(~name="zexp", ~nodes=Some([vizOp(op), vizAExps(args)]), ~render=(Some([op, ...args])) => Theia.noOp(
-//     vizOp(op, vizAExps(args)),
-//     [],
-//   ))
-
-// and vizZCtxt = (vizOp, (uid, {op, args, values}): zctxt('a), hole) =>
-//   noop(
-//     ~uid,
-//     ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//     vizOp(op, vizValues(values) @ [hole, ...vizAExps(args)]),
-//     [],
-//     (),
-//   )
-
-// and vizZPreVal = (vizOp, (uid, {op, values}): zpreval('a)) =>
-//   noop(
-//     ~uid,
-//     ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//     vizOp(op, vizValues(values)),
-//     [],
-//     (),
-//   )
-
-// and vizLambda = ((uid, {vid, exp}): lambda) =>
-//   hSeq(
-//     ~uid,
-//     ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//     [str("\\", ()), vizVid(vid), str(".", ()), vizExp(exp)],
-//   )
-
-// and vizAExpOp = ((uid, aexp_op): aexp_op, inputs: list(Sidewinder.Kernel.node)) =>
-//   switch (aexp_op, inputs) {
-//   | (Var(vid), []) =>
-//     noop(~uid, ~flowTag={flowNodeType: Leaf, uid, rootPath: []}, vizVid(vid), [], ())
-//   | (Var(_), _) =>
-//     failwith("op Var expected input arity 0, but got " ++ string_of_int(List.length(inputs)))
-//   | (App, [f, x]) =>
-//     hSeq(
-//       ~uid,
-//       ~flowTag={flowNodeType: Dummy, uid, rootPath: []},
-//       ~gap=2.,
-//       [
-//         str(~flowTag={flowNodeType: Leaf, uid, rootPath: [0]}, "(", ()),
-//         f,
-//         str(~flowTag={flowNodeType: Leaf, uid, rootPath: [2]}, ")", ()),
-//         str(~flowTag={flowNodeType: Leaf, uid, rootPath: [3]}, "(", ()),
-//         x,
-//         str(~flowTag={flowNodeType: Leaf, uid, rootPath: [5]}, ")", ()),
-//       ],
-//     )
-//   | (App, _) =>
-//     failwith("op App expected input arity 2, but got " ++ string_of_int(List.length(inputs)))
-//   | (Lam(lambda), []) =>
-//     noop(~uid, ~flowTag={flowNodeType: Leaf, uid, rootPath: []}, vizLambda(lambda), [], ())
-//   | (Lam(_), _) =>
-//     failwith("op Lam expected input arity 0, but got " ++ string_of_int(List.length(inputs)))
-//   | (Num(int), []) =>
-//     noop(~uid, ~flowTag={flowNodeType: Leaf, uid, rootPath: []}, vizInt(int), [], ())
-//   | (Num(_), _) =>
-//     failwith("op Num expected input arity 0, but got " ++ string_of_int(List.length(inputs)))
-//   | (Add, [x, y]) =>
-//     hSeq(
-//       ~flowTag={flowNodeType: Dummy, uid, rootPath: []},
-//       ~gap=2.,
-//       [
-//         str(~flowTag={flowNodeType: Leaf, uid, rootPath: [0]}, "(", ()),
-//         x,
-//         str(~flowTag={flowNodeType: Leaf, uid, rootPath: [2]}, ")", ()),
-//         str(~flowTag={flowNodeType: Leaf, uid, rootPath: [3]}, "+", ()),
-//         str(~flowTag={flowNodeType: Leaf, uid, rootPath: [4]}, "(", ()),
-//         y,
-//         str(~flowTag={flowNodeType: Leaf, uid, rootPath: [6]}, ")", ()),
-//       ],
-//     )
-//   | (Add, _) =>
-//     failwith("op Add expected input arity 2, but got " ++ string_of_int(List.length(inputs)))
-//   | (Bracket(exp), []) =>
-//     hSeq(
-//       ~uid,
-//       ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//       ~gap=2.,
-//       [str("{", ()), vizExp(exp), str("}", ())],
-//     )
-//   | (Bracket(_), _) =>
-//     failwith(
-//       "op Bracket expected input arity 0, but got " ++ string_of_int(List.length(inputs)),
-//     )
-//   }
-
-// and vizAExp = (aexp: aexp) => vizZExp(vizOp, aexp)
-
-// /* TODO: what to do with uid? */
-// and vizAExps = (aexps: aexps) =>
-//   switch (aexps) {
-//   | Empty => []
-//   | Cons(aexp, aexps) => [vizAExp(aexp), ...vizAExps(aexps)]
-//   }
-
-// and vizExpOp = ((uid, exp_op): exp_op, inputs: list(Sidewinder.Kernel.node)) =>
-//   switch (exp_op, inputs) {
-//   | (Lift(aexp), []) =>
-//     noop(~uid, ~flowTag={flowNodeType: Leaf, uid, rootPath: []}, vizAExp(aexp), [], ())
-//   | (Lift(_), _) =>
-//     failwith("op Lift expected input arity 0, but got " ++ string_of_int(List.length(inputs)))
-//   | (Let(vid, exp), [ae1]) =>
-//     vSeq(
-//       ~uid,
-//       ~flowTag={flowNodeType: Dummy, uid, rootPath: []},
-//       [
-//         hSeq(
-//           ~gap=2.,
-//           [
-//             str(~flowTag={flowNodeType: Leaf, uid, rootPath: [0, 0]}, "let", ()),
-//             vizVid(vid),
-//             str(~flowTag={flowNodeType: Leaf, uid, rootPath: [0, 2]}, "=", ()),
-//             ae1,
-//             str(~flowTag={flowNodeType: Leaf, uid, rootPath: [0, 4]}, "in", ()),
-//           ],
-//         ),
-//         vizExp(exp),
-//       ],
-//     )
-//   | (Let(_), _) =>
-//     failwith("op Let expected input arity 1, but got " ++ string_of_int(List.length(inputs)))
-//   }
-
-// and vizExp = (exp: exp) => vizZExp(vizOp, exp)
-
-// and vizOp = ((uid, op): op, inputs: list(Sidewinder.Kernel.node)) =>
-//   switch (op) {
-//   | Exp(exp_op) =>
-//     noop(
-//       ~uid,
-//       ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//       vizExpOp(exp_op, inputs),
-//       [],
-//       (),
-//     )
-//   | AExp(aexp_op) =>
-//     noop(
-//       ~uid,
-//       ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//       vizAExpOp(aexp_op, inputs),
-//       [],
-//       (),
-//     )
-//   }
-
-let rec vizValue = (value: value) =>
-  switch (value) {
-  | VNum(int) =>
+let rec vizZExp = ({op, args}: zexp('a)) =>
+  Some(
     ConfigIR.mk(
-      ~name="vnum",
-      ~nodes=Some([vizInt(int)]),
-      ~render=(Some([int])) => TheiaExtensions.value("num", int),
+      ~name="zexp",
+      ~nodes=[vizOp(op), ...List.map(vizAExp, args)],
+      ~render=([op, ...args]) => Theia.hSeq([orHole(op), ...List.map(orHole, args)]),
       (),
+    ),
+  )
+
+and vizZCtxt = ({op, args, values}: zctxt('a)) =>
+  Some(
+    ConfigIR.mk(
+      ~name="zctxt",
+      ~nodes=[vizOp(op), ...List.map(vizValue, values)] @ [None, ...List.map(vizAExp, args)],
+      ~render=([op, ...ahv]) => Theia.hSeq([orHole(op), ...List.map(orHole, ahv)]),
+      (),
+    ),
+  )
+
+and vizZPreVal = ({op, values}: zpreval('a)) =>
+  Some(
+    ConfigIR.mk(
+      ~name="zpreval",
+      ~nodes=[vizOp(op), ...List.map(vizValue, values)],
+      ~render=([op, ...values]) => Theia.hSeq([orHole(op), ...List.map(orHole, values)]),
+      (),
+    ),
+  )
+
+and vizLambda = ({vid, exp}: lambda) =>
+  Some(
+    ConfigIR.mk(
+      ~name="lambda",
+      ~nodes=[vizVid(vid), vizExp(exp)],
+      ~render=
+        ([vid, exp]) =>
+          Theia.hSeq([Theia.str("\\"), orHole(vid), Theia.str("."), orHole(exp)]),
+      (),
+    ),
+  )
+
+and vizAExpOp = (aexp_op: aexp_op) =>
+  switch (aexp_op) {
+  | Var(vid) =>
+    Some(
+      ConfigIR.mk(
+        ~name="var",
+        ~nodes=[vizVid(vid)],
+        ~render=([vid]) => Theia.noOp(orHole(vid), []),
+        (),
+      ),
     )
-  | Clo(lambda, env) =>
-    ConfigIR.mk(~name="clo", ~nodes=None, ~render=_ => Theia.str("TODO"), ())
-  /* TheiaExtensions.value(
-       ~uid,
-       ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-       "closure",
-       hSeq([vizLambda(lambda), vizEnv(env)] |> List.map(n => box(n, [], ()))),
-     ) */
+  | App =>
+    Some(
+      ConfigIR.mk(
+        ~name="app",
+        ~nodes=[None, None],
+        ~render=
+          ([f, x]) =>
+            Theia.hSeq(
+              ~gap=2.,
+              [
+                Theia.str("("),
+                orHole(f),
+                Theia.str(")"),
+                Theia.str("("),
+                orHole(x),
+                Theia.str(")"),
+              ],
+            ),
+        (),
+      ),
+    )
+
+  | Lam(lambda) =>
+    Some(
+      ConfigIR.mk(
+        ~name="lam",
+        ~nodes=[vizLambda(lambda)],
+        ~render=([lambda]) => orHole(lambda),
+        (),
+      ),
+    )
+  | Num(int) =>
+    Some(ConfigIR.mk(~name="num", ~nodes=[vizInt(int)], ~render=([int]) => orHole(int), ()))
+  | Add =>
+    Some(
+      ConfigIR.mk(
+        ~name="add",
+        ~nodes=[None, None],
+        ~render=
+          ([x, y]) =>
+            Theia.hSeq(
+              ~gap=2.,
+              [
+                Theia.str("("),
+                orHole(x),
+                Theia.str(")"),
+                Theia.str("+"),
+                Theia.str("("),
+                orHole(y),
+                Theia.str(")"),
+              ],
+            ),
+        (),
+      ),
+    )
+  | Bracket(exp) =>
+    Some(
+      ConfigIR.mk(
+        ~name="bracket",
+        ~nodes=[vizExp(exp)],
+        ~render=
+          ([exp]) => Theia.hSeq(~gap=2., [Theia.str("{"), orHole(exp), Theia.str("}")]),
+        (),
+      ),
+    )
   }
 
-// /* TODO: what to do with uid? */
-// and vizValues = (values: values) => {
-//   /* tail-recursively build list backwards */
-//   let rec aux = (acc, (uid, values): values) =>
-//     switch (values) {
-//     | Empty => acc
-//     | Cons(value, values) => aux([vizValue(value), ...acc], values)
-//     };
-//   aux([], values);
-// }
+and vizAExp = (aexp: aexp) => vizZExp(aexp)
+
+and vizExpOp = (exp_op: exp_op) =>
+  switch (exp_op) {
+  | Lift(aexp) =>
+    Some(
+      ConfigIR.mk(
+        ~name="lift",
+        ~nodes=[vizAExp(aexp)],
+        ~render=([aexp]) => Theia.noOp(orHole(aexp), []),
+        (),
+      ),
+    )
+  | Let(vid, exp) =>
+    Some(
+      ConfigIR.mk(
+        ~name="exp",
+        ~nodes=[vizVid(vid), vizExp(exp), None],
+        ~render=
+          ([vid, exp, ae1]) =>
+            Theia.vSeq([
+              Theia.hSeq(
+                ~gap=2.,
+                [
+                  Theia.str("let"),
+                  orHole(vid),
+                  Theia.str("="),
+                  orHole(ae1),
+                  Theia.str("<TODO: ae1>"),
+                  Theia.str("in"),
+                ],
+              ),
+              orHole(exp),
+            ]),
+        (),
+      ),
+    )
+  }
+
+and vizExp = (exp: exp) => vizZExp(exp)
+
+and vizOp = (op: op) =>
+  switch (op) {
+  | Exp(exp_op) =>
+    Some(
+      ConfigIR.mk(
+        ~name="exp",
+        ~nodes=[vizExpOp(exp_op)],
+        ~render=([exp_op]) => orHole(exp_op),
+        (),
+      ),
+    )
+  | AExp(aexp_op) =>
+    Some(
+      ConfigIR.mk(
+        ~name="aexp",
+        ~nodes=[vizAExpOp(aexp_op)],
+        ~render=([aexp_op]) => orHole(aexp_op),
+        (),
+      ),
+    )
+  }
+
+and vizValue = (value: value) =>
+  switch (value) {
+  | VNum(int) =>
+    Some(
+      ConfigIR.mk(
+        ~name="vnum",
+        ~nodes=[vizInt(int)],
+        ~render=([int]) => TheiaExtensions.value("num", orHole(int)),
+        (),
+      ),
+    )
+  | Clo(lambda, env) =>
+    Some(
+      ConfigIR.mk(
+        ~name="clo",
+        ~nodes=[vizLambda(lambda), vizEnv(env)],
+        ~render=
+          ([lambda, env]) =>
+            Theia.hSeq([orHole(lambda), orHole(env)] |> List.map(n => Theia.box(n, []))),
+        (),
+      ),
+    )
+  }
 
 and vizBinding = ({vid, value}: binding) =>
-  ConfigIR.mk(
-    ~name="binding",
-    ~nodes=Some([vizVid(vid), vizValue(value)]),
-    ~render=(Some([vid, value])) => Theia.hSeq([vid, value]),
-    (),
+  Some(
+    ConfigIR.mk(
+      ~name="binding",
+      ~nodes=[vizVid(vid), vizValue(value)],
+      ~render=([vid, value]) => Theia.hSeq([orHole(vid), orHole(value)]),
+      (),
+    ),
   )
 
 and vizEnv = (env: env) =>
   switch (env) {
-  | [] => ConfigIR.mk(~name="env_empty", ~nodes=None, ~render=_ => Theia.str("env"), ())
+  | [] => Some(ConfigIR.mk(~name="env_empty", ~nodes=[], ~render=_ => Theia.str("env"), ()))
   | [b, ...env] =>
+    Some(
+      ConfigIR.mk(
+        ~name="env_bind",
+        ~nodes=[vizBinding(b), vizEnv(env)],
+        ~render=([b, env]) => Theia.vSeq([orHole(env), orHole(b)]),
+        (),
+      ),
+    )
+  }
+
+and vizFocus = (focus: focus) =>
+  switch (focus) {
+  | ZExp(zeo) =>
+    Some(
+      ConfigIR.mk(~name="zexp", ~nodes=[vizZExp(zeo)], ~render=([zeo]) => orHole(zeo), ()),
+    )
+  | ZPreVal(zpvo) =>
+    Some(
+      ConfigIR.mk(
+        ~name="zpreval",
+        ~nodes=[vizZPreVal(zpvo)],
+        ~render=([zpvo]) => Theia.noOp(orHole(zpvo), []),
+        (),
+      ),
+    )
+  | Value(value) =>
+    Some(
+      ConfigIR.mk(
+        ~name="value",
+        ~nodes=[vizValue(value)],
+        ~render=([value]) => Theia.noOp(orHole(value), []),
+        (),
+      ),
+    )
+  }
+
+and vizZipper = ({focus, ctxts}: zipper) =>
+  Some(
     ConfigIR.mk(
-      ~name="env_bind",
-      ~nodes=Some([vizBinding(b), vizEnv(env)]),
-      ~render=(Some([b, env])) => Theia.vSeq([env, b]),
+      ~name="zipper",
+      ~nodes=[vizFocus(focus), ...List.map(vizZCtxt, ctxts)],
+      ~render=([focus, ...ctxts]) => Theia.hSeq([orHole(focus), ...List.map(orHole, ctxts)]),
       (),
+    ),
+  )
+
+and vizFrame = ({ctxts, env}: frame) =>
+  Some(
+    ConfigIR.mk(
+      ~name="frame",
+      ~nodes=[vizEnv(env), ...List.map(vizZCtxt, ctxts)],
+      ~render=([env, ...ctxts]) => Theia.vSeq([orHole(env), ...List.map(orHole, ctxts)]),
+      (),
+    ),
+  )
+
+and vizStack = (stack: stack) =>
+  switch (stack) {
+  | [] =>
+    Some(ConfigIR.mk(~name="stack_empty", ~nodes=[], ~render=([]) => Theia.str("stack"), ()))
+  | [frame, ...stack] =>
+    Some(
+      ConfigIR.mk(
+        ~name="stack_frame",
+        ~nodes=[vizFrame(frame), vizStack(stack)],
+        ~render=([frame, stack]) => Theia.vSeq([orHole(stack), orHole(frame)]),
+        (),
+      ),
     )
   };
-
-// and vizFocus = ((uid, focus): focus) =>
-//   switch (focus) {
-//   | ZExp(zeo) =>
-//     noop(~uid, ~flowTag={flowNodeType: Leaf, uid, rootPath: []}, vizZExp(vizOp, zeo), [], ())
-//   | ZPreVal(zpvo) =>
-//     noop(
-//       ~uid,
-//       ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//       vizZPreVal(vizOp, zpvo),
-//       [],
-//       (),
-//     )
-//   | Value(value) =>
-//     noop(~uid, ~flowTag={flowNodeType: Leaf, uid, rootPath: []}, vizValue(value), [], ())
-//   }
-
-// /* TODO: what to do with uid? */
-// /* threads ctxts through */
-// /* TODO: might be reversed */
-// and vizCtxts = ((uid, ctxts): ctxts, hole) =>
-//   switch (ctxts) {
-//   | Empty => noop(~flowTag={flowNodeType: Leaf, uid, rootPath: []}, hole, [], ())
-//   | Cons(ctxt, ctxts) =>
-//     /* TODO: where to place uid? */
-//     let highlightHole =
-//       highlight(
-//         // ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//         ~fill="hsla(240, 100%, 80%, 33%)",
-//         hole,
-//         [],
-//         (),
-//       );
-//     /* noop(
-//          ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//          vizCtxts(ctxts, vizZCtxt(vizOp, ctxt, highlightHole)),
-//          [],
-//          (),
-//        ); */
-//     vizCtxts(
-//       ctxts,
-//       /* noop(
-//            ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//            vizZCtxt(vizOp, ctxt, highlightHole),
-//            [],
-//            (),
-//          ), */ vizZCtxt(
-//         vizOp,
-//         ctxt,
-//         highlightHole,
-//       ),
-//     );
-//   }
-
-// and vizZipper = ((uid, {focus, ctxts}): zipper) =>
-//   noop(
-//     ~uid,
-//     ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//     vizCtxts(ctxts, vizFocus(focus)),
-//     [],
-//     (),
-//   )
-
-// and vizFrame = ((uid, {ctxts, env}): frame) =>
-//   vSeq(
-//     ~uid,
-//     ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//     [vizEnv(env), vizCtxts(ctxts, hole)],
-//   )
-
-// and vizStack = ((uid, stack): stack) =>
-//   switch (stack) {
-//   | Empty => str(~uid, ~flowTag={flowNodeType: Leaf, uid, rootPath: []}, "stack", ())
-//   | Cons(frame, stack) =>
-//     vSeq(
-//       ~uid,
-//       ~flowTag={flowNodeType: Leaf, uid, rootPath: []},
-//       [vizStack(stack), vizFrame(frame)],
-//     )
-//   };
 
 let vizConfig = ({zipper, env, stack}: config) =>
   ConfigIR.mk(
     ~name="config",
-    ~nodes=Some([/* vizZipper(zipper), */ vizEnv(env) /* , vizStack(stack) */]),
+    ~nodes=[vizZipper(zipper), vizEnv(env) /* , vizStack(stack) */],
     ~render=
-      (Some([/* zipper, */ env /* , stack */])) =>
-        Theia.hSeq(~gap=20., [Theia.vSeq(~gap=5., [env /* , zipper */]) /* stack */]),
+      ([zipper, env /* , stack */]) =>
+        Theia.hSeq(
+          ~gap=20.,
+          [Theia.vSeq(~gap=5., [orHole(env), orHole(zipper)]) /* stack */],
+        ),
     (),
   );
