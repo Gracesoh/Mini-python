@@ -1,12 +1,9 @@
 open Sidewinder;
-// open TheiaExtensions;
 open ZED;
-
-/* TODO: remove flow argument */
 
 let orHole = on =>
   switch (on) {
-  | None => Theia.hole
+  | None => Theia.hole()
   | Some(n) => n
   };
 
@@ -164,7 +161,6 @@ and vizExpOp = (exp_op: exp_op) =>
                   orHole(vid),
                   Theia.str("="),
                   orHole(ae1),
-                  Theia.str("<TODO: ae1>"),
                   Theia.str("in"),
                 ],
               ),
@@ -311,12 +307,12 @@ and vizStack = (stack: stack) =>
 let vizConfig = ({zipper, env, stack}: config) =>
   ConfigIR.mk(
     ~name="config",
-    ~nodes=[vizZipper(zipper), vizEnv(env) /* , vizStack(stack) */],
+    ~nodes=[vizZipper(zipper), vizEnv(env), vizStack(stack)],
     ~render=
-      ([zipper, env /* , stack */]) =>
+      ([zipper, env, stack]) =>
         Theia.hSeq(
           ~gap=20.,
-          [Theia.vSeq(~gap=5., [orHole(env), orHole(zipper)]) /* stack */],
+          [Theia.vSeq(~gap=5., [orHole(env), orHole(zipper)]), orHole(stack)],
         ),
     (),
   );
