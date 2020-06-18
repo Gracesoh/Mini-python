@@ -27,25 +27,11 @@ let makeContainer = text => {
   content;
 };
 
-// All 4 examples.
-ReactDOMRe.render(
-  <BlinkingGreeting>
-    {React.string("Hello!")}
-  </BlinkingGreeting>,
-  makeContainer("Blinking Greeting"),
-);
+let id = x => ZEDLang.Lam({vid: x, exp: Lift(Var(x))});
 
 ReactDOMRe.render(
-  <ReducerFromReactJSDocs />,
-  makeContainer("Reducer From ReactJS Docs"),
-);
-
-ReactDOMRe.render(
-  <FetchedDogPictures />,
-  makeContainer("Fetched Dog Pictures"),
-);
-
-ReactDOMRe.render(
-  <ReasonUsingJSUsingReason />,
-  makeContainer("Reason Using JS Using Reason"),
+  <VizTrace
+    program={ZEDLang.Let("x", Num(5), Lift(Add(App(id("y"), Var("x")), Num(1))))}
+  />,
+  makeContainer("Demo. See state 17."),
 );
