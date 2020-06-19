@@ -48,7 +48,11 @@ let make = (~padding=10., ~transition=false, ~program) => {
   let swTrace =
     trace
     |> List.map(c =>
-         c |> ZEDViz.vizConfig |> Sidewinder.Config.propagatePlace |> Sidewinder.Config.lower
+         c
+         |> ZEDViz.vizConfig
+         |> Sidewinder.Config.propagatePlace
+         |> ZEDTransform.transformOp
+         |> Sidewinder.Config.lower
        );
   let initState = List.nth(swTrace, state.pos) |> Sidewinder.Kernel.render;
   let width = 1000.;

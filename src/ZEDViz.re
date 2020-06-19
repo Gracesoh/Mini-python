@@ -149,7 +149,7 @@ and vizExpOp = (exp_op: exp_op) =>
   | Let(vid, exp) =>
     Some(
       ConfigIR.mk(
-        ~name="exp",
+        ~name="let",
         ~nodes=[vizVid(vid), vizExp(exp), None],
         ~render=
           ([vid, exp, ae1]) =>
@@ -247,12 +247,17 @@ and vizFocus = (focus: focus) =>
   switch (focus) {
   | ZExp(zeo) =>
     Some(
-      ConfigIR.mk(~name="zexp", ~nodes=[vizZExp(zeo)], ~render=([zeo]) => orHole(zeo), ()),
+      ConfigIR.mk(
+        ~name="focus_zexp",
+        ~nodes=[vizZExp(zeo)],
+        ~render=([zeo]) => orHole(zeo),
+        (),
+      ),
     )
   | ZPreVal(zpvo) =>
     Some(
       ConfigIR.mk(
-        ~name="zpreval",
+        ~name="focus_zpreval",
         ~nodes=[vizZPreVal(zpvo)],
         ~render=([zpvo]) => Theia.noOp(orHole(zpvo), []),
         (),
@@ -261,7 +266,7 @@ and vizFocus = (focus: focus) =>
   | Value(value) =>
     Some(
       ConfigIR.mk(
-        ~name="value",
+        ~name="focus_value",
         ~nodes=[vizValue(value)],
         ~render=([value]) => Theia.noOp(orHole(value), []),
         (),
