@@ -1,6 +1,10 @@
 open Sidewinder.ConfigIR;
 
-let rec mergeNone = (l1, l2) =>
+let rec mergeNone =
+        (
+          l1: list(option(Sidewinder.ConfigIR.node)),
+          l2: list(option(Sidewinder.ConfigIR.node)),
+        ) =>
   switch (l1, l2) {
   | (l1, []) => l1
   | ([None, ...l1], [x, ...l2]) => [x, ...mergeNone(l1, l2)]
@@ -26,13 +30,32 @@ let rec transformOpOption = on =>
 
 let transformOp = n => transformOpOption(Some(n))->Belt.Option.getExn;
 
-let rec zipUp = (f, cs) =>
+let rec zipUp =
+        (f: option(Sidewinder.ConfigIR.node), cs: list(option(Sidewinder.ConfigIR.node))) =>
   switch (cs) {
   | [] => f
   | [c, ...cs] =>
     switch (c) {
     | None => None
-    | Some(c) => zipUp(Some({...c, nodes: mergeNone(c.nodes, [f])}), cs)
+    | Some(c) =>
+      let place =
+        switch (f) {
+        | None => None
+        | Some(f) => f.place
+        };
+      let f =
+        Some(
+          Sidewinder.ConfigIR.mk(
+            ~place?,
+            ~name="highlight",
+            ~nodes=[f],
+            ~render=
+              ([Some(f)]) =>
+                Sidewinder.Theia.highlight(~fill="hsla(240, 100%, 80%, 33%)", f, []),
+            (),
+          ),
+        );
+      zipUp(Some({...c, nodes: mergeNone(c.nodes, [f])}), cs);
     }
   };
 
