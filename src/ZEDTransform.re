@@ -41,7 +41,12 @@ let rec zipUp =
       let place =
         switch (f) {
         | None => None
-        | Some(f) => f.place
+        | Some(f) =>
+          switch (f.place) {
+          | None => None
+          /* TODO: need to add into flow */
+          | Some(place) => Some(place ++ ".highlight")
+          }
         };
       let f =
         Some(
