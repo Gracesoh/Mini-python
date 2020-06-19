@@ -52,6 +52,8 @@ let make = (~padding=10., ~transition=false, ~program) => {
          |> ZEDViz.vizConfig
          |> Sidewinder.Config.propagatePlace
          |> ZEDTransform.transformOp
+         |> ZEDTransform.transformZipper
+         |> ZEDTransform.transformContinuation
          |> Sidewinder.Config.lower
        );
   let initState = List.nth(swTrace, state.pos) |> Sidewinder.Kernel.render;

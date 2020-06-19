@@ -150,9 +150,9 @@ and vizExpOp = (exp_op: exp_op) =>
     Some(
       ConfigIR.mk(
         ~name="let",
-        ~nodes=[vizVid(vid), vizExp(exp), None],
+        ~nodes=[vizVid(vid), None, vizExp(exp)],
         ~render=
-          ([vid, exp, ae1]) =>
+          ([vid, ae1, exp]) =>
             Theia.vSeq([
               Theia.hSeq(
                 ~gap=2.,

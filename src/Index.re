@@ -35,3 +35,12 @@ ReactDOMRe.render(
   />,
   makeContainer("Demo. See state 17."),
 );
+
+ReactDOMRe.render(
+  <VizTrace
+    program={
+      ZEDLang.Let("x", Num(5), Lift(Add(Add(App(id("y"), Var("x")), Num(1)), Num(2))))
+    }
+  />,
+  makeContainer("Nested continuations on stack"),
+);
