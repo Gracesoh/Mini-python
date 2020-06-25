@@ -47,20 +47,24 @@ let make = (~padding=10., ~transition=false, ~program) => {
 
   let swTrace =
     trace
-    |> List.map(c =>
-         c
-         |> ZEDViz.vizConfig
-         |> Sidewinder.Config.propagatePlace
-         |> ZEDTransform.transformOp
-         |> ZEDTransform.transformZipper
-         |> ZEDTransform.transformContinuation
-         |> Sidewinder.Config.lower
-       );
-  let initState = List.nth(swTrace, state.pos) |> Sidewinder.Kernel.render;
+    |> List.map(c => {
+         let (flow, n) = c |> ZEDViz.vizConfig |> Sidewinder.Config.propagatePlace([]);
+         (
+           flow,
+           n
+           |> ZEDTransform.transformOp
+           |> ZEDTransform.transformZipper
+           |> ZEDTransform.transformContinuation,
+         );
+       })
+    |> List.split
+    |> (((flows, ns)) => Sidewinder.Config.compile(flows, ns));
+  let initState = List.nth(swTrace, state.pos);
   let width = 1000.;
   let height = 300.;
   let xOffset = 0.;
   let yOffset = 100.;
+  Js.log(swTrace |> Array.of_list);
   /* let width = initState.bbox->Sidewinder.Rectangle.width;
      let height = initState.bbox->Sidewinder.Rectangle.height; */
 
