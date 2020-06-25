@@ -55,8 +55,7 @@ let rec zipUp =
             ~name="highlight",
             ~nodes=[f],
             ~render=
-              ([Some(f)]) =>
-                Sidewinder.Theia.highlight(~fill="hsla(240, 100%, 80%, 33%)", f, []),
+              ([f]) => Sidewinder.Theia.highlight(~fill="hsla(240, 100%, 80%, 33%)", f, []),
             (),
           ),
         );

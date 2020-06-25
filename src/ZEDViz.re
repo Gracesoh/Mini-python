@@ -1,12 +1,6 @@
 open Sidewinder;
 open ZED;
 
-let orHole = on =>
-  switch (on) {
-  | None => Theia.hole()
-  | Some(n) => n
-  };
-
 let vizVid = (vid: vid) =>
   Some(ConfigIR.mk(~name="vid", ~nodes=[], ~render=_ => Theia.str(vid), ()));
 
@@ -18,7 +12,7 @@ let rec vizZExp = ({op, args}: zexp('a)) =>
     ConfigIR.mk(
       ~name="zexp",
       ~nodes=[vizOp(op), ...List.map(vizAExp, args)],
-      ~render=([op, ...args]) => Theia.hSeq([orHole(op), ...List.map(orHole, args)]),
+      ~render=Theia.hSeq,
       (),
     ),
   )
@@ -28,7 +22,7 @@ and vizZCtxt = ({op, args, values}: zctxt('a)) =>
     ConfigIR.mk(
       ~name="zctxt",
       ~nodes=[vizOp(op), ...List.map(vizValue, values)] @ [None, ...List.map(vizAExp, args)],
-      ~render=([op, ...ahv]) => Theia.hSeq([orHole(op), ...List.map(orHole, ahv)]),
+      ~render=Theia.hSeq,
       (),
     ),
   )
@@ -38,7 +32,7 @@ and vizZPreVal = ({op, values}: zpreval('a)) =>
     ConfigIR.mk(
       ~name="zpreval",
       ~nodes=[vizOp(op), ...List.map(vizValue, values)],
-      ~render=([op, ...values]) => Theia.hSeq([orHole(op), ...List.map(orHole, values)]),
+      ~render=Theia.hSeq,
       (),
     ),
   )
@@ -48,9 +42,7 @@ and vizLambda = ({vid, exp}: lambda) =>
     ConfigIR.mk(
       ~name="lambda",
       ~nodes=[vizVid(vid), vizExp(exp)],
-      ~render=
-        ([vid, exp]) =>
-          Theia.hSeq([Theia.str("\\"), orHole(vid), Theia.str("."), orHole(exp)]),
+      ~render=([vid, exp]) => Theia.hSeq([Theia.str("\\"), vid, Theia.str("."), exp]),
       (),
     ),
   )
@@ -62,7 +54,7 @@ and vizAExpOp = (aexp_op: aexp_op) =>
       ConfigIR.mk(
         ~name="var",
         ~nodes=[vizVid(vid)],
-        ~render=([vid]) => Theia.noOp(orHole(vid), []),
+        ~render=([vid]) => Theia.noOp(vid, []),
         (),
       ),
     )
@@ -75,14 +67,7 @@ and vizAExpOp = (aexp_op: aexp_op) =>
           ([f, x]) =>
             Theia.hSeq(
               ~gap=2.,
-              [
-                Theia.str("("),
-                orHole(f),
-                Theia.str(")"),
-                Theia.str("("),
-                orHole(x),
-                Theia.str(")"),
-              ],
+              [Theia.str("("), f, Theia.str(")"), Theia.str("("), x, Theia.str(")")],
             ),
         (),
       ),
@@ -90,15 +75,10 @@ and vizAExpOp = (aexp_op: aexp_op) =>
 
   | Lam(lambda) =>
     Some(
-      ConfigIR.mk(
-        ~name="lam",
-        ~nodes=[vizLambda(lambda)],
-        ~render=([lambda]) => orHole(lambda),
-        (),
-      ),
+      ConfigIR.mk(~name="lam", ~nodes=[vizLambda(lambda)], ~render=([lambda]) => lambda, ()),
     )
   | Num(int) =>
-    Some(ConfigIR.mk(~name="num", ~nodes=[vizInt(int)], ~render=([int]) => orHole(int), ()))
+    Some(ConfigIR.mk(~name="num", ~nodes=[vizInt(int)], ~render=([int]) => int, ()))
   | Add =>
     Some(
       ConfigIR.mk(
@@ -110,11 +90,11 @@ and vizAExpOp = (aexp_op: aexp_op) =>
               ~gap=2.,
               [
                 Theia.str("("),
-                orHole(x),
+                x,
                 Theia.str(")"),
                 Theia.str("+"),
                 Theia.str("("),
-                orHole(y),
+                y,
                 Theia.str(")"),
               ],
             ),
@@ -126,8 +106,7 @@ and vizAExpOp = (aexp_op: aexp_op) =>
       ConfigIR.mk(
         ~name="bracket",
         ~nodes=[vizExp(exp)],
-        ~render=
-          ([exp]) => Theia.hSeq(~gap=2., [Theia.str("{"), orHole(exp), Theia.str("}")]),
+        ~render=([exp]) => Theia.hSeq(~gap=2., [Theia.str("{"), exp, Theia.str("}")]),
         (),
       ),
     )
@@ -142,7 +121,7 @@ and vizExpOp = (exp_op: exp_op) =>
       ConfigIR.mk(
         ~name="lift",
         ~nodes=[vizAExp(aexp)],
-        ~render=([aexp]) => Theia.noOp(orHole(aexp), []),
+        ~render=([aexp]) => Theia.noOp(aexp, []),
         (),
       ),
     )
@@ -156,15 +135,9 @@ and vizExpOp = (exp_op: exp_op) =>
             Theia.vSeq([
               Theia.hSeq(
                 ~gap=2.,
-                [
-                  Theia.str("let"),
-                  orHole(vid),
-                  Theia.str("="),
-                  orHole(ae1),
-                  Theia.str("in"),
-                ],
+                [Theia.str("let"), vid, Theia.str("="), ae1, Theia.str("in")],
               ),
-              orHole(exp),
+              exp,
             ]),
         (),
       ),
@@ -177,19 +150,14 @@ and vizOp = (op: op) =>
   switch (op) {
   | Exp(exp_op) =>
     Some(
-      ConfigIR.mk(
-        ~name="exp",
-        ~nodes=[vizExpOp(exp_op)],
-        ~render=([exp_op]) => orHole(exp_op),
-        (),
-      ),
+      ConfigIR.mk(~name="exp", ~nodes=[vizExpOp(exp_op)], ~render=([exp_op]) => exp_op, ()),
     )
   | AExp(aexp_op) =>
     Some(
       ConfigIR.mk(
         ~name="aexp",
         ~nodes=[vizAExpOp(aexp_op)],
-        ~render=([aexp_op]) => orHole(aexp_op),
+        ~render=([aexp_op]) => aexp_op,
         (),
       ),
     )
@@ -202,7 +170,7 @@ and vizValue = (value: value) =>
       ConfigIR.mk(
         ~name="vnum",
         ~nodes=[vizInt(int)],
-        ~render=([int]) => TheiaExtensions.value("num", orHole(int)),
+        ~render=([int]) => TheiaExtensions.value("num", int),
         (),
       ),
     )
@@ -212,8 +180,7 @@ and vizValue = (value: value) =>
         ~name="clo",
         ~nodes=[vizLambda(lambda), vizEnv(env)],
         ~render=
-          ([lambda, env]) =>
-            Theia.hSeq([orHole(lambda), orHole(env)] |> List.map(n => Theia.box(n, []))),
+          ([lambda, env]) => Theia.hSeq([lambda, env] |> List.map(n => Theia.box(n, []))),
         (),
       ),
     )
@@ -224,7 +191,7 @@ and vizBinding = ({vid, value}: binding) =>
     ConfigIR.mk(
       ~name="binding",
       ~nodes=[vizVid(vid), vizValue(value)],
-      ~render=([vid, value]) => Theia.hSeq([orHole(vid), orHole(value)]),
+      ~render=([vid, value]) => Theia.hSeq([vid, value]),
       (),
     ),
   )
@@ -237,7 +204,7 @@ and vizEnv = (env: env) =>
       ConfigIR.mk(
         ~name="env_bind",
         ~nodes=[vizBinding(b), vizEnv(env)],
-        ~render=([b, env]) => Theia.vSeq([orHole(env), orHole(b)]),
+        ~render=([b, env]) => Theia.vSeq([env, b]),
         (),
       ),
     )
@@ -246,20 +213,13 @@ and vizEnv = (env: env) =>
 and vizFocus = (focus: focus) =>
   switch (focus) {
   | ZExp(zeo) =>
-    Some(
-      ConfigIR.mk(
-        ~name="focus_zexp",
-        ~nodes=[vizZExp(zeo)],
-        ~render=([zeo]) => orHole(zeo),
-        (),
-      ),
-    )
+    Some(ConfigIR.mk(~name="focus_zexp", ~nodes=[vizZExp(zeo)], ~render=([zeo]) => zeo, ()))
   | ZPreVal(zpvo) =>
     Some(
       ConfigIR.mk(
         ~name="focus_zpreval",
         ~nodes=[vizZPreVal(zpvo)],
-        ~render=([zpvo]) => Theia.noOp(orHole(zpvo), []),
+        ~render=([zpvo]) => Theia.noOp(zpvo, []),
         (),
       ),
     )
@@ -268,7 +228,7 @@ and vizFocus = (focus: focus) =>
       ConfigIR.mk(
         ~name="focus_value",
         ~nodes=[vizValue(value)],
-        ~render=([value]) => Theia.noOp(orHole(value), []),
+        ~render=([value]) => Theia.noOp(value, []),
         (),
       ),
     )
@@ -279,7 +239,7 @@ and vizZipper = ({focus, ctxts}: zipper) =>
     ConfigIR.mk(
       ~name="zipper",
       ~nodes=[vizFocus(focus), ...List.map(vizZCtxt, ctxts)],
-      ~render=([focus, ...ctxts]) => Theia.hSeq([orHole(focus), ...List.map(orHole, ctxts)]),
+      ~render=Theia.hSeq,
       (),
     ),
   )
@@ -289,7 +249,7 @@ and vizFrame = ({ctxts, env}: frame) =>
     ConfigIR.mk(
       ~name="frame",
       ~nodes=[vizEnv(env), ...List.map(vizZCtxt, ctxts)],
-      ~render=([env, ...ctxts]) => Theia.vSeq([orHole(env), ...List.map(orHole, ctxts)]),
+      ~render=Theia.vSeq,
       (),
     ),
   )
@@ -303,7 +263,7 @@ and vizStack = (stack: stack) =>
       ConfigIR.mk(
         ~name="stack_frame",
         ~nodes=[vizFrame(frame), vizStack(stack)],
-        ~render=([frame, stack]) => Theia.vSeq([orHole(stack), orHole(frame)]),
+        ~render=([frame, stack]) => Theia.vSeq([stack, frame]),
         (),
       ),
     )
@@ -315,9 +275,6 @@ let vizConfig = ({zipper, env, stack}: config) =>
     ~nodes=[vizZipper(zipper), vizEnv(env), vizStack(stack)],
     ~render=
       ([zipper, env, stack]) =>
-        Theia.hSeq(
-          ~gap=20.,
-          [Theia.vSeq(~gap=5., [orHole(env), orHole(zipper)]), orHole(stack)],
-        ),
+        Theia.hSeq(~gap=20., [Theia.vSeq(~gap=5., [env, zipper]), stack]),
     (),
   );
