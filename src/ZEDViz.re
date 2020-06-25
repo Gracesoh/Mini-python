@@ -1,45 +1,58 @@
 open Sidewinder;
-open ZED;
+open ZEDDelta;
 
-let vizVid = (vid: vid) =>
-  Some(ConfigIR.mk(~name="vid", ~nodes=[], ~render=_ => Theia.str(vid), ()));
+let vizVid = ((place, vid): vid) =>
+  Some(ConfigIR.mk(~place, ~name="vid", ~nodes=[], ~render=_ => Theia.str(vid), ()));
 
-let vizInt = (int: int) =>
-  Some(ConfigIR.mk(~name="int", ~nodes=[], ~render=_ => Theia.str(string_of_int(int)), ()));
+let vizInt = ((place, int): int_uid) =>
+  Some(
+    ConfigIR.mk(~place, ~name="int", ~nodes=[], ~render=_ => Theia.str(string_of_int(int)), ()),
+  );
 
-let rec vizZExp = ({op, args}: zexp('a)) =>
+let rec vizZExp = ((place, {op, args}): zexp('a)) =>
   Some(
     ConfigIR.mk(
+      ~place,
       ~name="zexp",
-      ~nodes=[vizOp(op), ...List.map(vizAExp, args)],
+      ~nodes=[vizOp(op), ...vizAExps(args)],
       ~render=Theia.hSeq,
       (),
     ),
   )
 
-and vizZCtxt = ({op, args, values}: zctxt('a)) =>
+and vizZCtxt = ((place, {op, args, values}): zctxt('a)) =>
   Some(
     ConfigIR.mk(
+      ~place,
       ~name="zctxt",
-      ~nodes=[vizOp(op), ...List.map(vizValue, values)] @ [None, ...List.map(vizAExp, args)],
+      ~nodes=[vizOp(op), ...vizValues(values)] @ [None, ...vizAExps(args)],
       ~render=Theia.hSeq,
       (),
     ),
   )
 
-and vizZPreVal = ({op, values}: zpreval('a)) =>
+/* TODO: what to do with place? */
+and vizCtxts = ((place, ctxts): ctxts) =>
+  switch (ctxts) {
+  | Empty => []
+  | Cons(zctxt, ctxts) => [vizZCtxt(zctxt), ...vizCtxts(ctxts)]
+  }
+
+and vizZPreVal = ((place, {op, values}): zpreval('a)) =>
   Some(
     ConfigIR.mk(
+      ~place,
       ~name="zpreval",
-      ~nodes=[vizOp(op), ...List.map(vizValue, values)],
+      ~nodes=[vizOp(op), ...vizValues(values)],
       ~render=Theia.hSeq,
       (),
     ),
   )
 
-and vizLambda = ({vid, exp}: lambda) =>
+and vizLambda = ((place, {vid, exp}): lambda) =>
   Some(
     ConfigIR.mk(
+      ~place,
       ~name="lambda",
       ~nodes=[vizVid(vid), vizExp(exp)],
       ~render=([vid, exp]) => Theia.hSeq([Theia.str("\\"), vid, Theia.str("."), exp]),
@@ -47,11 +60,12 @@ and vizLambda = ({vid, exp}: lambda) =>
     ),
   )
 
-and vizAExpOp = (aexp_op: aexp_op) =>
+and vizAExpOp = ((place, aexp_op): aexp_op) =>
   switch (aexp_op) {
   | Var(vid) =>
     Some(
       ConfigIR.mk(
+        ~place,
         ~name="var",
         ~nodes=[vizVid(vid)],
         ~render=([vid]) => Theia.noOp(vid, []),
@@ -61,6 +75,7 @@ and vizAExpOp = (aexp_op: aexp_op) =>
   | App =>
     Some(
       ConfigIR.mk(
+        ~place,
         ~name="app",
         ~nodes=[None, None],
         ~render=
@@ -75,13 +90,20 @@ and vizAExpOp = (aexp_op: aexp_op) =>
 
   | Lam(lambda) =>
     Some(
-      ConfigIR.mk(~name="lam", ~nodes=[vizLambda(lambda)], ~render=([lambda]) => lambda, ()),
+      ConfigIR.mk(
+        ~place,
+        ~name="lam",
+        ~nodes=[vizLambda(lambda)],
+        ~render=([lambda]) => lambda,
+        (),
+      ),
     )
   | Num(int) =>
-    Some(ConfigIR.mk(~name="num", ~nodes=[vizInt(int)], ~render=([int]) => int, ()))
+    Some(ConfigIR.mk(~place, ~name="num", ~nodes=[vizInt(int)], ~render=([int]) => int, ()))
   | Add =>
     Some(
       ConfigIR.mk(
+        ~place,
         ~name="add",
         ~nodes=[None, None],
         ~render=
@@ -104,6 +126,7 @@ and vizAExpOp = (aexp_op: aexp_op) =>
   | Bracket(exp) =>
     Some(
       ConfigIR.mk(
+        ~place,
         ~name="bracket",
         ~nodes=[vizExp(exp)],
         ~render=([exp]) => Theia.hSeq(~gap=2., [Theia.str("{"), exp, Theia.str("}")]),
@@ -114,11 +137,19 @@ and vizAExpOp = (aexp_op: aexp_op) =>
 
 and vizAExp = (aexp: aexp) => vizZExp(aexp)
 
-and vizExpOp = (exp_op: exp_op) =>
+/* TODO: what to do with place? */
+and vizAExps = ((place, aexps): aexps) =>
+  switch (aexps) {
+  | Empty => []
+  | Cons(aexp, aexps) => [vizAExp(aexp), ...vizAExps(aexps)]
+  }
+
+and vizExpOp = ((place, exp_op): exp_op) =>
   switch (exp_op) {
   | Lift(aexp) =>
     Some(
       ConfigIR.mk(
+        ~place,
         ~name="lift",
         ~nodes=[vizAExp(aexp)],
         ~render=([aexp]) => Theia.noOp(aexp, []),
@@ -128,6 +159,7 @@ and vizExpOp = (exp_op: exp_op) =>
   | Let(vid, exp) =>
     Some(
       ConfigIR.mk(
+        ~place,
         ~name="let",
         ~nodes=[vizVid(vid), None, vizExp(exp)],
         ~render=
@@ -146,15 +178,22 @@ and vizExpOp = (exp_op: exp_op) =>
 
 and vizExp = (exp: exp) => vizZExp(exp)
 
-and vizOp = (op: op) =>
+and vizOp = ((place, op): op) =>
   switch (op) {
   | Exp(exp_op) =>
     Some(
-      ConfigIR.mk(~name="exp", ~nodes=[vizExpOp(exp_op)], ~render=([exp_op]) => exp_op, ()),
+      ConfigIR.mk(
+        ~place,
+        ~name="exp",
+        ~nodes=[vizExpOp(exp_op)],
+        ~render=([exp_op]) => exp_op,
+        (),
+      ),
     )
   | AExp(aexp_op) =>
     Some(
       ConfigIR.mk(
+        ~place,
         ~name="aexp",
         ~nodes=[vizAExpOp(aexp_op)],
         ~render=([aexp_op]) => aexp_op,
@@ -163,11 +202,12 @@ and vizOp = (op: op) =>
     )
   }
 
-and vizValue = (value: value) =>
+and vizValue = ((place, value): value) =>
   switch (value) {
   | VNum(int) =>
     Some(
       ConfigIR.mk(
+        ~place,
         ~name="vnum",
         ~nodes=[vizInt(int)],
         ~render=([int]) => TheiaExtensions.value("num", int),
@@ -177,6 +217,7 @@ and vizValue = (value: value) =>
   | Clo(lambda, env) =>
     Some(
       ConfigIR.mk(
+        ~place,
         ~name="clo",
         ~nodes=[vizLambda(lambda), vizEnv(env)],
         ~render=
@@ -186,9 +227,17 @@ and vizValue = (value: value) =>
     )
   }
 
-and vizBinding = ({vid, value}: binding) =>
+/* TODO: what to do with place? */
+and vizValues = ((place, values): values) =>
+  switch (values) {
+  | Empty => []
+  | Cons(value, values) => [vizValue(value), ...vizValues(values)]
+  }
+
+and vizBinding = ((place, {vid, value}): binding) =>
   Some(
     ConfigIR.mk(
+      ~place,
       ~name="binding",
       ~nodes=[vizVid(vid), vizValue(value)],
       ~render=([vid, value]) => Theia.hSeq([vid, value]),
@@ -196,12 +245,14 @@ and vizBinding = ({vid, value}: binding) =>
     ),
   )
 
-and vizEnv = (env: env) =>
+and vizEnv = ((place, env): env) =>
   switch (env) {
-  | [] => Some(ConfigIR.mk(~name="env_empty", ~nodes=[], ~render=_ => Theia.str("env"), ()))
-  | [b, ...env] =>
+  | Empty =>
+    Some(ConfigIR.mk(~place, ~name="env_empty", ~nodes=[], ~render=_ => Theia.str("env"), ()))
+  | Cons(b, env) =>
     Some(
       ConfigIR.mk(
+        ~place,
         ~name="env_bind",
         ~nodes=[vizBinding(b), vizEnv(env)],
         ~render=([b, env]) => Theia.vSeq([env, b]),
@@ -210,13 +261,22 @@ and vizEnv = (env: env) =>
     )
   }
 
-and vizFocus = (focus: focus) =>
+and vizFocus = ((place, focus): focus) =>
   switch (focus) {
   | ZExp(zeo) =>
-    Some(ConfigIR.mk(~name="focus_zexp", ~nodes=[vizZExp(zeo)], ~render=([zeo]) => zeo, ()))
+    Some(
+      ConfigIR.mk(
+        ~place,
+        ~name="focus_zexp",
+        ~nodes=[vizZExp(zeo)],
+        ~render=([zeo]) => zeo,
+        (),
+      ),
+    )
   | ZPreVal(zpvo) =>
     Some(
       ConfigIR.mk(
+        ~place,
         ~name="focus_zpreval",
         ~nodes=[vizZPreVal(zpvo)],
         ~render=([zpvo]) => Theia.noOp(zpvo, []),
@@ -226,6 +286,7 @@ and vizFocus = (focus: focus) =>
   | Value(value) =>
     Some(
       ConfigIR.mk(
+        ~place,
         ~name="focus_value",
         ~nodes=[vizValue(value)],
         ~render=([value]) => Theia.noOp(value, []),
@@ -234,33 +295,44 @@ and vizFocus = (focus: focus) =>
     )
   }
 
-and vizZipper = ({focus, ctxts}: zipper) =>
+and vizZipper = ((place, {focus, ctxts}): zipper) =>
   Some(
     ConfigIR.mk(
+      ~place,
       ~name="zipper",
-      ~nodes=[vizFocus(focus), ...List.map(vizZCtxt, ctxts)],
+      ~nodes=[vizFocus(focus), ...vizCtxts(ctxts)],
       ~render=Theia.hSeq,
       (),
     ),
   )
 
-and vizFrame = ({ctxts, env}: frame) =>
+and vizFrame = ((place, {ctxts, env}): frame) =>
   Some(
     ConfigIR.mk(
+      ~place,
       ~name="frame",
-      ~nodes=[vizEnv(env), ...List.map(vizZCtxt, ctxts)],
+      ~nodes=[vizEnv(env), ...vizCtxts(ctxts)],
       ~render=Theia.vSeq,
       (),
     ),
   )
 
-and vizStack = (stack: stack) =>
+and vizStack = ((place, stack): stack) =>
   switch (stack) {
-  | [] =>
-    Some(ConfigIR.mk(~name="stack_empty", ~nodes=[], ~render=([]) => Theia.str("stack"), ()))
-  | [frame, ...stack] =>
+  | Empty =>
     Some(
       ConfigIR.mk(
+        ~place,
+        ~name="stack_empty",
+        ~nodes=[],
+        ~render=([]) => Theia.str("stack"),
+        (),
+      ),
+    )
+  | Cons(frame, stack) =>
+    Some(
+      ConfigIR.mk(
+        ~place,
         ~name="stack_frame",
         ~nodes=[vizFrame(frame), vizStack(stack)],
         ~render=([frame, stack]) => Theia.vSeq([stack, frame]),
@@ -269,12 +341,26 @@ and vizStack = (stack: stack) =>
     )
   };
 
-let vizConfig = ({zipper, env, stack}: config) =>
+let vizConfig = ((place, {zipper, env, stack}): config) =>
+  Some(
+    ConfigIR.mk(
+      ~place,
+      ~name="config",
+      ~nodes=[vizZipper(zipper), vizEnv(env), vizStack(stack)],
+      ~render=
+        ([zipper, env, stack]) =>
+          Theia.hSeq(~gap=20., [Theia.vSeq(~gap=5., [env, zipper]), stack]),
+      (),
+    ),
+  );
+
+let vizRule = rule =>
+  Some(ConfigIR.mk(~name="rule", ~nodes=[], ~render=_ => Theia.str("rule: " ++ rule), ()));
+
+let vizState = (rule, config) =>
   ConfigIR.mk(
-    ~name="config",
-    ~nodes=[vizZipper(zipper), vizEnv(env), vizStack(stack)],
-    ~render=
-      ([zipper, env, stack]) =>
-        Theia.hSeq(~gap=20., [Theia.vSeq(~gap=5., [env, zipper]), stack]),
+    ~name="state",
+    ~nodes=[vizRule(rule), vizConfig(config)],
+    ~render=Theia.vSeq(~gap=30.),
     (),
   );

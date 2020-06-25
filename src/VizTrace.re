@@ -26,7 +26,7 @@ let reducer = (state, action) => {
 [@react.component]
 let make = (~padding=10., ~transition=false, ~program) => {
   let liftedProgram = ZED.expFromZEDLang(program);
-  let trace = ZED.interpretTrace(liftedProgram);
+  let trace = ZEDDelta.interpretTrace(liftedProgram);
 
   let (state, dispatch) = React.useReducer(reducer, initialState);
 
@@ -47,8 +47,8 @@ let make = (~padding=10., ~transition=false, ~program) => {
 
   let swTrace =
     trace
-    |> List.map(c => {
-         let (flow, n) = c |> ZEDViz.vizConfig |> Sidewinder.Config.propagatePlace([]);
+    |> List.map((((rule, flow), c)) => {
+         let (flow, n) = ZEDViz.vizState(rule, c) |> Sidewinder.Config.propagatePlace([]);
          (
            flow,
            n
