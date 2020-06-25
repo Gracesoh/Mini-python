@@ -64,7 +64,6 @@ let make = (~padding=10., ~transition=false, ~program) => {
   let height = 300.;
   let xOffset = 0.;
   let yOffset = 100.;
-  Js.log(swTrace |> Array.of_list);
   /* let width = initState.bbox->Sidewinder.Rectangle.width;
      let height = initState.bbox->Sidewinder.Rectangle.height; */
 
