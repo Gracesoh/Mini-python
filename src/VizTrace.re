@@ -53,7 +53,7 @@ let make = (~padding=10., ~program) => {
   // Notice that instead of `useEffect`, we have `useEffect0`. See
   // reasonml.github.io/reason-react/docs/en/components#hooks for more info
   React.useEffect0(() => {
-    dispatch(Length(List.length(flows)));
+    dispatch(Length(List.length(nodes)));
 
     // Returning None, instead of Some(() => ...), means we don't have any
     // cleanup to do before unmounting. That's not 100% true. We should
@@ -99,12 +99,15 @@ let make = (~padding=10., ~program) => {
          (n1 |> transform, f, n2 |> transform);
        });
   // Js.log2("sifted", flowSiftedNodes |> Array.of_list);
+  let finalNode = flowSiftedNodes |> List.rev |> List.hd |> (((_, _, n)) => n);
+  let finalState = Sidewinder.Config.compileTransition(finalNode, [], finalNode);
   let animatedNodes =
-    List.map(((n1, f, n2)) => Sidewinder.Config.compileTransition(n1, f, n2), flowSiftedNodes);
+    List.map(((n1, f, n2)) => Sidewinder.Config.compileTransition(n1, f, n2), flowSiftedNodes)
+    @ [finalState];
   /*  let flowNodePairs =
         trace |> List.map((((rule, flow), n)) => (flow, ZEDViz.vizState(rule, n)));
       let transitionViz = Sidewinder.Fn.mapPairs(((f1, n1), (f2, n2)) => {}, flowNodePairs); */
-  let renderedConfig = List.nth(/* swTrace */ animatedNodes, state.pos);
+  let renderedConfig = List.nth(animatedNodes, state.pos);
   let width = 1000.;
   let height = 300.;
   let xOffset = 0.;
