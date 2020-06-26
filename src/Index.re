@@ -44,3 +44,20 @@ ReactDOMRe.render(
   />,
   makeContainer("Nested continuations on stack"),
 );
+
+ReactDOMRe.render(
+  <VizTrace program={ZEDLang.Let("x", Num(5), Lift(Var("x")))} />,
+  makeContainer("Variable Lookup"),
+);
+
+ReactDOMRe.render(
+  <VizTrace program={ZEDLang.Lift(Add(Num(1), Num(2)))} />,
+  makeContainer("Add"),
+);
+
+ReactDOMRe.render(<VizTrace program={ZEDLang.Lift(Num(1))} />, makeContainer("Lift(ae)"));
+
+ReactDOMRe.render(
+  <VizTrace program={ZEDLang.Lift(Bracket(Lift(Num(1))))} />,
+  makeContainer("Lift(Bracket(Lift(ae)))"),
+);

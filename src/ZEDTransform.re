@@ -18,11 +18,31 @@ let rec transformOpOption = on =>
   switch (on) {
   | None => None
   | Some(n) =>
-    let {name, nodes} as n = {...n, nodes: List.map(transformOpOption, n.nodes)};
+    let {name, place, nodes} as n = {...n, nodes: List.map(transformOpOption, n.nodes)};
     if (name == "zexp" || name == "zctxt" || name == "zpreval") {
       let [Some({nodes}), ...inputs] = nodes;
       let [Some({nodes} as op)] = nodes;
-      Some({...op, nodes: mergeNone(nodes, inputs)});
+      switch (place) {
+      | None =>
+        Some(
+          Sidewinder.ConfigIR.mk(
+            ~name,
+            ~nodes=[Some({...op, nodes: mergeNone(nodes, inputs)})],
+            ~render=([n]) => Sidewinder.Theia.noOp(n, []),
+            (),
+          ),
+        )
+      | Some(place) =>
+        Some(
+          Sidewinder.ConfigIR.mk(
+            ~place,
+            ~name,
+            ~nodes=[Some({...op, nodes: mergeNone(nodes, inputs)})],
+            ~render=([n]) => Sidewinder.Theia.noOp(n, []),
+            (),
+          ),
+        )
+      };
     } else {
       Some(n);
     };

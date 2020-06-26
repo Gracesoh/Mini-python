@@ -32,17 +32,14 @@ let toggle = (Animation.{curr: _, next}) =>
   | After => {curr: next, next: Before}
   };
 
-let transform = n =>
-  n
-  |> ZEDTransform.transformOp
-  |> ZEDTransform.transformZipper
-  |> ZEDTransform.transformContinuation;
+let transform = n => n /* |> ZEDTransform.transformOp   |> ZEDTransform.transformZipper   |> ZEDTransform.transformContinuation */;
 
 [@react.component]
 let make = (~padding=10., ~program) => {
   let liftedProgram = ZED.expFromZEDLang(program);
   let (rules, nodes) = ZEDDelta.interpretTrace(liftedProgram);
   let (ruleNames, flows) = List.split(rules);
+  Js.log2("ruleNames", ruleNames |> Array.of_list);
 
   let (state, dispatch) = React.useReducer(reducer, initialState);
   let (Animation.{curr, next}, setAnimationState) = React.useState(() => Animation.initValue);
@@ -78,9 +75,10 @@ let make = (~padding=10., ~program) => {
      |> (((flows, ns)) => Sidewinder.Config.compile(flows, ns)); */
   let nodes =
     List.combine(ruleNames @ [""], nodes) |> List.map(((r, n)) => ZEDViz.vizState(r, n));
-  let cap = 1;
-  let nodes = nodes->Belt.List.take(cap + 1)->Belt.Option.getExn;
-  let flows = flows->Belt.List.take(cap)->Belt.Option.getExn;
+  /* let cap = 15;
+
+     let nodes = nodes->Belt.List.take(cap + 1)->Belt.Option.getExn;
+     let flows = flows->Belt.List.take(cap)->Belt.Option.getExn; */
   Js.log2("nodes", nodes |> Array.of_list);
   let flowSiftedNodes =
     Sidewinder.Fn.mapPairs((n1, n2) => (n1, n2), nodes)
@@ -88,7 +86,9 @@ let make = (~padding=10., ~program) => {
     |> List.map(((f, (n1, n2))) => {
          let (keys, valueList) = List.split(f);
          let values = List.flatten(valueList);
+         Js.log2("f before propagation", f |> Array.of_list);
          let (f, n1) = ZEDViz.filterPlaces(keys, n1) |> Sidewinder.Config.propagatePlace(f);
+         Js.log2("f after propagation", f |> Array.of_list);
          let (_, n2) = ZEDViz.filterPlaces(values, n2) |> Sidewinder.Config.propagatePlace(f);
          (n1 |> transform, f, n2 |> transform);
        });
