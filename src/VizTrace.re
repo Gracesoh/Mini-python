@@ -33,10 +33,12 @@ let toggle = (Animation.{curr: _, next}) =>
   };
 
 let transform = n =>
-  n |> ZEDTransform.transformZExp |> ZEDTransform.transformZCtxt |> ZEDTransform.transformZPreval;
-/*
- |> ZEDTransform.transformZipper
- |> ZEDTransform.transformContinuation; */
+  n
+  |> ZEDTransform.transformZExp
+  |> ZEDTransform.transformZCtxt
+  |> ZEDTransform.transformZPreval
+  |> ZEDTransform.transformZipper
+  |> ZEDTransform.transformContinuation;
 
 [@react.component]
 let make = (~padding=10., ~program) => {

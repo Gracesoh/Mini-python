@@ -90,6 +90,17 @@ let rec transformZPrevalOption = on =>
 
 let transformZPreval = n => transformZPrevalOption(Some(n))->Belt.Option.getExn;
 
+let rec ctxtsToList = ({name, nodes} as ctxts) =>
+  if (name == "ctxts_empty") {
+    [];
+  } else if (name == "ctxts_cons") {
+    let [Some(ctxt), Some(ctxts)] = nodes;
+    [Some(ctxt), ...ctxtsToList(ctxts)];
+  } else {
+    Js.log2("expected ctxts_empty or ctxts_cons. found", name);
+    assert(false);
+  };
+
 let rec zipUp =
         (f: option(Sidewinder.ConfigIR.node), cs: list(option(Sidewinder.ConfigIR.node))) =>
   switch (cs) {
@@ -111,7 +122,8 @@ let rec zipUp =
       let f =
         Some(
           Sidewinder.ConfigIR.mk(
-            ~place?,
+            /* TODO: add to flow!!! */
+            /* ~place?, */
             ~name="highlight",
             ~nodes=[f],
             ~render=
@@ -129,7 +141,8 @@ let rec transformZipperOption = on =>
   | Some(n) =>
     let {name, nodes} as n = {...n, nodes: List.map(transformZipperOption, n.nodes)};
     if (name == "zipper") {
-      let [f, ...ctxts] = nodes;
+      let [f, Some(ctxts)] = nodes;
+      let ctxts = ctxtsToList(ctxts);
       zipUp(f, ctxts);
     } else {
       Some(n);
@@ -144,24 +157,9 @@ let rec transformContinuationOption = on =>
   | Some(n) =>
     let {name, nodes} as n = {...n, nodes: List.map(transformContinuationOption, n.nodes)};
     if (name == "frame") {
-      let [env, ...ctxts] = nodes;
-      Some({
-        ...n,
-        nodes: [
-          env,
-          zipUp(
-            Some(
-              Sidewinder.ConfigIR.mk(
-                ~name="hole",
-                ~nodes=[],
-                ~render=_ => Sidewinder.Theia.hole(),
-                (),
-              ),
-            ),
-            ctxts,
-          ),
-        ],
-      });
+      let [env, Some(ctxts)] = nodes;
+      let ctxts = ctxtsToList(ctxts);
+      Some({...n, nodes: [env, zipUp(None, ctxts)]});
     } else {
       Some(n);
     };
