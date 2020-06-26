@@ -8,7 +8,8 @@ module.exports = {
   // you didn't know this
   mode: 'production',
   output: {
-    path: path.join(__dirname, "bundleOutput"),
+    path: path.join(__dirname, "build"),
     filename: 'index.js',
+    publicPath: "/zed/"
   },
 };
