@@ -23,17 +23,34 @@ let reducer = (state, action) => {
   };
 };
 
+module Animation = Sidewinder.AnimationComponentHelper;
+module AnimationProvider = Sidewinder.AnimationComponentProvider;
+
+let toggle = (Animation.{curr: _, next}) =>
+  switch (next) {
+  | Before => Animation.{curr: next, next: After}
+  | After => {curr: next, next: Before}
+  };
+
+let transform = n =>
+  n
+  |> ZEDTransform.transformOp
+  |> ZEDTransform.transformZipper
+  |> ZEDTransform.transformContinuation;
+
 [@react.component]
-let make = (~padding=10., ~transition=false, ~program) => {
+let make = (~padding=10., ~program) => {
   let liftedProgram = ZED.expFromZEDLang(program);
-  let trace = ZEDDelta.interpretTrace(liftedProgram);
+  let (rules, nodes) = ZEDDelta.interpretTrace(liftedProgram);
+  let (ruleNames, flows) = List.split(rules);
 
   let (state, dispatch) = React.useReducer(reducer, initialState);
+  let (Animation.{curr, next}, setAnimationState) = React.useState(() => Animation.initValue);
 
   // Notice that instead of `useEffect`, we have `useEffect0`. See
   // reasonml.github.io/reason-react/docs/en/components#hooks for more info
   React.useEffect0(() => {
-    dispatch(Length(List.length(trace)));
+    dispatch(Length(List.length(flows)));
 
     // Returning None, instead of Some(() => ...), means we don't have any
     // cleanup to do before unmounting. That's not 100% true. We should
@@ -45,39 +62,77 @@ let make = (~padding=10., ~transition=false, ~program) => {
     None;
   });
 
-  let swTrace =
-    trace
-    |> List.map((((rule, flow), c)) => {
-         let (flow, n) = ZEDViz.vizState(rule, c) |> Sidewinder.Config.propagatePlace([]);
-         (
-           flow,
-           n
-           |> ZEDTransform.transformOp
-           |> ZEDTransform.transformZipper
-           |> ZEDTransform.transformContinuation,
-         );
-       })
-    |> List.split
-    |> (((flows, ns)) => Sidewinder.Config.compile(flows, ns));
-  let initState = List.nth(swTrace, state.pos);
+  /* let swTrace =
+     trace
+     |> List.map((((rule, flow), c)) => {
+          let (flow, n) = ZEDViz.vizState(rule, c) |> Sidewinder.Config.propagatePlace(flow);
+          (
+            flow,
+            n
+            |> ZEDTransform.transformOp
+            |> ZEDTransform.transformZipper
+            |> ZEDTransform.transformContinuation,
+          );
+        })
+     |> List.split
+     |> (((flows, ns)) => Sidewinder.Config.compile(flows, ns)); */
+  let nodes =
+    List.combine(ruleNames @ [""], nodes) |> List.map(((r, n)) => ZEDViz.vizState(r, n));
+  let cap = 1;
+  let nodes = nodes->Belt.List.take(cap + 1)->Belt.Option.getExn;
+  let flows = flows->Belt.List.take(cap)->Belt.Option.getExn;
+  Js.log2("nodes", nodes |> Array.of_list);
+  let flowSiftedNodes =
+    Sidewinder.Fn.mapPairs((n1, n2) => (n1, n2), nodes)
+    |> List.combine(flows)
+    |> List.map(((f, (n1, n2))) => {
+         let (keys, valueList) = List.split(f);
+         let values = List.flatten(valueList);
+         let (f, n1) = ZEDViz.filterPlaces(keys, n1) |> Sidewinder.Config.propagatePlace(f);
+         let (_, n2) = ZEDViz.filterPlaces(values, n2) |> Sidewinder.Config.propagatePlace(f);
+         (n1 |> transform, f, n2 |> transform);
+       });
+  Js.log2("sifted", flowSiftedNodes |> Array.of_list);
+  let animatedNodes =
+    List.map(((n1, f, n2)) => Sidewinder.Config.compileTransition(n1, f, n2), flowSiftedNodes);
+  /*  let flowNodePairs =
+        trace |> List.map((((rule, flow), n)) => (flow, ZEDViz.vizState(rule, n)));
+      let transitionViz = Sidewinder.Fn.mapPairs(((f1, n1), (f2, n2)) => {}, flowNodePairs); */
+  let renderedConfig = List.nth(/* swTrace */ animatedNodes, state.pos);
   let width = 1000.;
   let height = 300.;
   let xOffset = 0.;
   let yOffset = 100.;
-  /* let width = initState.bbox->Sidewinder.Rectangle.width;
-     let height = initState.bbox->Sidewinder.Rectangle.height; */
+  /* let width = renderedConfig.bbox->Sidewinder.Rectangle.width;
+     let height = renderedConfig.bbox->Sidewinder.Rectangle.height; */
 
   /* /* transform is unnecessary b/c top-level always has identity transform b/c parent controls transform */
      let xOffset =
-       /* initState.transform.translate.x +.  */ initState.bbox->Sidewinder.Rectangle.x1;
-     let yOffset = /* initState.transform.translate.y +. */
-     initState.bbox->Sidewinder.Rectangle.y1; */
+       /* renderedConfig.transform.translate.x +.  */ renderedConfig.bbox->Sidewinder.Rectangle.x1;
+     let yOffset = /* renderedConfig.transform.translate.y +. */
+     renderedConfig.bbox->Sidewinder.Rectangle.y1; */
   <div>
     <div> {React.string("state: ")} {React.string(string_of_int(state.pos))} </div>
-    <button style=leftButtonStyle onClick={_event => dispatch(Decrement)}>
+    <button
+      style=leftButtonStyle
+      onClick={_event => {
+        dispatch(Decrement);
+        setAnimationState(_ => Animation.initValue);
+      }}>
       {React.string("<-")}
     </button>
-    <button style=rightButtonStyle onClick={_event => dispatch(Increment)}>
+    <button onClick={_event => setAnimationState(toggle)}>
+      {switch (curr) {
+       | Before => React.string("To After")
+       | After => React.string("To Before")
+       }}
+    </button>
+    <button
+      style=rightButtonStyle
+      onClick={_event => {
+        dispatch(Increment);
+        setAnimationState(_ => Animation.initValue);
+      }}>
       {React.string("->")}
     </button>
     <svg
@@ -92,7 +147,7 @@ let make = (~padding=10., ~transition=false, ~program) => {
           ++ Js.Float.toString(yOffset +. padding)
           ++ ")"
         }>
-        initState
+        <AnimationProvider value=Animation.{curr, next}> renderedConfig </AnimationProvider>
       </g>
     </svg>
   </div>;

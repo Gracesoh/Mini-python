@@ -1071,18 +1071,20 @@ let rec iterateMaybeSideEffect = (f: 'a => option(('a, 'b)), x: 'a): (list('a), 
     ([x, ...als], [b, ...bls]);
   };
 
-let interpretTrace = (p: ZED.exp): list(((string, Sidewinder.Flow.linear), config)) => {
+let interpretTrace = (p: ZED.exp): (list((string, Sidewinder.Flow.linear)), list(config)) => {
   let (states, rules) = iterateMaybeSideEffect(step, inject(p));
   // Js.log2("rules", rules |> Array.of_list);
   let (actualRules, flow) = rules |> List.split;
-  Js.log2("rules", List.combine(actualRules, flow) |> Array.of_list);
-  List.combine(rules @ [("", [])], takeWhileInclusive(c => !isFinal(c), states));
+  // Js.log2("rules", List.combine(actualRules, flow) |> Array.of_list);
+  /* List.combine(rules @ [("", [])], takeWhileInclusive(c => !isFinal(c), states)); */
+  (rules, takeWhileInclusive(c => !isFinal(c), states));
 };
 
-let interpret = p => {
-  let (_, s) = interpretTrace(p) |> List.rev |> List.hd;
-  switch (s) {
-  | (_, {zipper: (_, {focus: (_, Value(v)), ctxts: _}), env: _, stack: _}) => valueFromUID(v)
-  | _ => raise(failwith("expected a value"))
-  };
-};
+/* let interpret = p => {
+     let (_, s) = interpretTrace(p) |> List.rev |> List.hd;
+     switch (s) {
+     | (_, {zipper: (_, {focus: (_, Value(v)), ctxts: _}), env: _, stack: _}) => valueFromUID(v)
+     | _ => raise(failwith("expected a value"))
+     };
+   };
+    */

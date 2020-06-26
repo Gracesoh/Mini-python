@@ -364,3 +364,18 @@ let vizState = (rule, config) =>
     ~render=Theia.vSeq(~gap=30.),
     (),
   );
+
+/* filter out places in `n` except for those in `places` */
+let filterPlaces = (places: list(Place.t), n: ConfigIR.node) => {
+  let rec filterPlacesOption = (on: option(ConfigIR.node)) =>
+    switch (on) {
+    | None => None
+    | Some(n) =>
+      let nodes = List.map(filterPlacesOption, n.nodes);
+      switch (n.place) {
+      | Some(p) when !List.mem(p, places) => Some({...n, nodes, place: None})
+      | _ => Some({...n, nodes})
+      };
+    };
+  filterPlacesOption(Some(n))->Belt.Option.getExn;
+};
