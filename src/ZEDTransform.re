@@ -1,5 +1,7 @@
 open Sidewinder.ConfigIR;
 
+/* TODO: these transformations assume that the sequences of nodes are lists instead of nested somehow. That needs to be fixed!! */
+
 let rec mergeNone =
         (
           l1: list(option(Sidewinder.ConfigIR.node)),
@@ -14,41 +16,79 @@ let rec mergeNone =
     failwith("Some nodes remaining!");
   };
 
-let rec transformOpOption = on =>
+let rec aexpsToList = ({name, nodes} as aexps) =>
+  if (name == "aexps_empty") {
+    [];
+  } else if (name == "aexps_cons") {
+    let [Some(aexp), Some(aexps)] = nodes;
+    [Some(aexp), ...aexpsToList(aexps)];
+  } else {
+    Js.log2("expected aexps_empty or aexps_cons. found", name);
+    assert(false);
+  };
+
+let rec valuesToList = ({name, nodes} as values) =>
+  if (name == "values_empty") {
+    [];
+  } else if (name == "values_cons") {
+    let [Some(value), Some(values)] = nodes;
+    [Some(value), ...valuesToList(values)];
+  } else {
+    Js.log2("expected values_empty or values_cons. found", name);
+    assert(false);
+  };
+
+let rec transformZExpOption = on =>
   switch (on) {
   | None => None
   | Some(n) =>
-    let {name, place, nodes} as n = {...n, nodes: List.map(transformOpOption, n.nodes)};
-    if (name == "zexp" || name == "zctxt" || name == "zpreval") {
-      let [Some({nodes}), ...inputs] = nodes;
+    let {name, nodes} as n = {...n, nodes: List.map(transformZExpOption, n.nodes)};
+    if (name == "zexp") {
+      let [Some({nodes}), Some(args)] = nodes;
       let [Some({nodes} as op)] = nodes;
-      switch (place) {
-      | None =>
-        Some(
-          Sidewinder.ConfigIR.mk(
-            ~name,
-            ~nodes=[Some({...op, nodes: mergeNone(nodes, inputs)})],
-            ~render=([n]) => Sidewinder.Theia.noOp(n, []),
-            (),
-          ),
-        )
-      | Some(place) =>
-        Some(
-          Sidewinder.ConfigIR.mk(
-            ~place,
-            ~name,
-            ~nodes=[Some({...op, nodes: mergeNone(nodes, inputs)})],
-            ~render=([n]) => Sidewinder.Theia.noOp(n, []),
-            (),
-          ),
-        )
-      };
+      let args = aexpsToList(args);
+      Some({...op, nodes: nodes->mergeNone(args)});
     } else {
       Some(n);
     };
   };
 
-let transformOp = n => transformOpOption(Some(n))->Belt.Option.getExn;
+let transformZExp = n => transformZExpOption(Some(n))->Belt.Option.getExn;
+
+let rec transformZCtxtOption = on =>
+  switch (on) {
+  | None => None
+  | Some(n) =>
+    let {name, nodes} as n = {...n, nodes: List.map(transformZCtxtOption, n.nodes)};
+    if (name == "zctxt") {
+      let [Some({nodes}), Some(values), None, Some(args)] = nodes;
+      let [Some({nodes} as op)] = nodes;
+      let values = valuesToList(values);
+      let args = aexpsToList(args);
+      Some({...op, nodes: nodes->mergeNone(values)->mergeNone([None, ...args])});
+    } else {
+      Some(n);
+    };
+  };
+
+let transformZCtxt = n => transformZCtxtOption(Some(n))->Belt.Option.getExn;
+
+let rec transformZPrevalOption = on =>
+  switch (on) {
+  | None => None
+  | Some(n) =>
+    let {name, nodes} as n = {...n, nodes: List.map(transformZPrevalOption, n.nodes)};
+    if (name == "zpreval") {
+      let [Some({nodes}), Some(values)] = nodes;
+      let [Some({nodes} as op)] = nodes;
+      let values = valuesToList(values);
+      Some({...op, nodes: nodes->mergeNone(values)});
+    } else {
+      Some(n);
+    };
+  };
+
+let transformZPreval = n => transformZPrevalOption(Some(n))->Belt.Option.getExn;
 
 let rec zipUp =
         (f: option(Sidewinder.ConfigIR.node), cs: list(option(Sidewinder.ConfigIR.node))) =>
