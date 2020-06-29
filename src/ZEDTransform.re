@@ -126,8 +126,7 @@ let rec zipUp =
             /* ~place?, */
             ~name="highlight",
             ~nodes=[f],
-            ~render=
-              ([f]) => Sidewinder.Theia.highlight(~fill="hsla(240, 100%, 80%, 33%)", f, []),
+            ~render=([f]) => Bobcat.Theia.highlight(~fill="hsla(240, 100%, 80%, 33%)", f, []),
             (),
           ),
         );

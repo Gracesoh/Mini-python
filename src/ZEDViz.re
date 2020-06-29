@@ -1,4 +1,5 @@
 open Sidewinder;
+open Bobcat;
 open ZEDDelta;
 
 let vizVid = ((place, vid): vid) =>
