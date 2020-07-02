@@ -370,28 +370,26 @@ and vizStack = ((place, stack): stack) =>
   };
 
 let vizConfig = ((place, {zipper, env, stack}): config) =>
-  Some(
-    ConfigIR.mk(
-      ~place,
-      ~name="config",
-      ~nodes=[vizZipper(zipper), vizEnv(env), vizStack(stack)],
-      ~render=
-        ([zipper, env, stack]) =>
-          Theia.hSeq(~gap=20., [Theia.vSeq(~gap=5., [env, zipper]), stack]),
-      (),
-    ),
+  ConfigIR.mk(
+    ~place,
+    ~name="config",
+    ~nodes=[vizZipper(zipper), vizEnv(env), vizStack(stack)],
+    ~render=
+      ([zipper, env, stack]) =>
+        Theia.hSeq(~gap=20., [Theia.vSeq(~gap=5., [env, zipper]), stack]),
+    (),
   );
 
 let vizRule = rule =>
   Some(ConfigIR.mk(~name="rule", ~nodes=[], ~render=_ => Theia.str("rule: " ++ rule), ()));
 
-let vizState = (rule, config) =>
-  ConfigIR.mk(
-    ~name="state",
-    ~nodes=[vizRule(rule), vizConfig(config)],
-    ~render=Theia.vSeq(~gap=30.),
-    (),
-  );
+/* let vizState = (rule, config) =>
+   ConfigIR.mk(
+     ~name="state",
+     ~nodes=[vizRule(rule), vizConfig(config)],
+     ~render=Theia.vSeq(~gap=30.),
+     (),
+   ); */
 
 /* filter out places in `n` except for those in `places` */
 let filterPlaces = (places: list(Place.t), n: ConfigIR.node) => {

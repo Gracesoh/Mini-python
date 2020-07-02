@@ -79,8 +79,7 @@ let make = (~padding=10., ~program) => {
         })
      |> List.split
      |> (((flows, ns)) => Sidewinder.Config.compile(flows, ns)); */
-  let nodes =
-    List.combine(ruleNames @ [""], nodes) |> List.map(((r, n)) => ZEDViz.vizState(r, n));
+  let nodes = nodes |> List.map(ZEDViz.vizConfig);
   /* let cap = 15;
 
      let nodes = nodes->Belt.List.take(cap + 1)->Belt.Option.getExn;
@@ -144,6 +143,9 @@ let make = (~padding=10., ~program) => {
       }}>
       {React.string("->")}
     </button>
+    <br />
+    <br />
+    <div> {React.string("rule: " ++ List.nth(ruleNames, state.pos))} </div>
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width={Js.Float.toString(width +. padding *. 2.)}
