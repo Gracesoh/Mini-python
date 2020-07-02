@@ -81,7 +81,7 @@ let rec transformZPrevalOption = on =>
     if (name == "zpreval") {
       let [Some({nodes}), Some(values)] = nodes;
       let [Some({nodes} as op)] = nodes;
-      let values = valuesToList(values);
+      let values = valuesToList(values) |> List.rev;
       Some({...op, nodes: nodes->mergeNone(values)});
     } else {
       Some(n);

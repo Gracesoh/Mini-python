@@ -145,7 +145,7 @@ let make = (~padding=10., ~program) => {
     </button>
     <br />
     <br />
-    <div> {React.string("rule: " ++ List.nth(ruleNames, state.pos))} </div>
+    <div> {React.string("rule: " ++ List.nth(ruleNames @ [""], state.pos))} </div>
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width={Js.Float.toString(width +. padding *. 2.)}
