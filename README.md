@@ -59,3 +59,33 @@ open indexProduction.html
 To serve the files, this template uses a minimal dependency called `moduleserve`. A URL such as `localhost:8000/scores/john` resolves to the file `scores/john.html`. If you'd like to override this and handle URL resolution yourself, change the `server` command in `package.json` from `moduleserve ./ --port 8000` to `moduleserve ./ --port 8000 --spa` (for "single page application"). This will make `moduleserve` serve the default `index.html` for any URL. Since `index.html` loads `Index.bs.js`, you can grab hold of the URL in the corresponding `Index.re` and do whatever you want.
 
 By the way, ReasonReact comes with a small [router](https://reasonml.github.io/reason-react/docs/en/router) you might be interested in.
+
+# ChocoPy Rules 
+
+- [] Class Instances 
+- [] List objects 
+- [] None
+- [] Functions 
+- [] Operational Rules
+- [] Literals 
+- [] Pass statements 
+- [] Expression Statements 
+- [] Varialbe Accesses 
+- [] Numerical Operations 
+- [] String Operations
+- [] Oject Identity 
+- [] Logical Operators 
+- [] Conditional Statements and Expressions
+- [] While Loops
+- [] Return Statements
+- [] Statement Sequences 
+- [] Function Invocation 
+- [] Function Definitions 
+- [] Object Instantiation 
+- [] List Displays
+- [] Operations on Lists
+- [] Multiple Assignment
+- [] Predefined Functions
+- [] For Loops
+- [] Programs 
+
