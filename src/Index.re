@@ -61,3 +61,11 @@ ReactDOMRe.render(
   <VizTrace program={ZEDLang.Lift(Bracket(Lift(Num(1))))} />,
   makeContainer("Lift(Bracket(Lift(ae)))"),
 );
+
+ReactDOMRe.render(
+  <VizTrace
+    continuity=false
+    program={ZEDLang.Let("x", Num(5), Lift(Add(App(id("y"), Var("x")), Num(1))))}
+  />,
+  makeContainer("Demo - No Continuity"),
+);
