@@ -62,30 +62,30 @@ By the way, ReasonReact comes with a small [router](https://reasonml.github.io/r
 
 # ChocoPy Rules 
 
-- [] Class Instances 
-- [] List objects 
-- [] None
-- [] Functions 
-- [] Operational Rules
-- [] Literals 
-- [] Pass statements 
-- [] Expression Statements 
-- [] Varialbe Accesses 
-- [] Numerical Operations 
-- [] String Operations
-- [] Oject Identity 
-- [] Logical Operators 
-- [] Conditional Statements and Expressions
-- [] While Loops
-- [] Return Statements
-- [] Statement Sequences 
-- [] Function Invocation 
-- [] Function Definitions 
-- [] Object Instantiation 
-- [] List Displays
-- [] Operations on Lists
-- [] Multiple Assignment
-- [] Predefined Functions
-- [] For Loops
-- [] Programs 
+- [ ] Class Instances 
+- [ ] List objects 
+- [ ] None
+- [ ] Functions 
+- [ ] Operational Rules
+- [ ] Literals 
+- [ ] Pass statements 
+- [ ] Expression Statements 
+- [ ] Varialbe Accesses 
+- [ ] Numerical Operations 
+- [ ] String Operations
+- [ ] Oject Identity 
+- [ ] Logical Operators 
+- [ ] Conditional Statements and Expressions
+- [ ] While Loops
+- [ ] Return Statements
+- [ ] Statement Sequences 
+- [ ] Function Invocation 
+- [ ] Function Definitions 
+- [ ] Object Instantiation 
+- [ ] List Displays
+- [ ] Operations on Lists
+- [ ] Multiple Assignment
+- [ ] Predefined Functions
+- [ ] For Loops
+- [ ] Programs 
 
