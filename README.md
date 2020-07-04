@@ -1,3 +1,10 @@
+<<<<<<< HEAD
+=======
+# ZED Machine
+
+A reworking of the FFS machine with Sidewinder2.
+
+>>>>>>> aabd7337f4cb262c233f42ea378e352ea7397f13
 # ReasonReact Template & Examples
 
 This is:

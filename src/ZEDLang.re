@@ -16,4 +16,3 @@ and aexp =
 and exp =
   | Lift(aexp)
   | Let(vid, aexp, exp);
-
