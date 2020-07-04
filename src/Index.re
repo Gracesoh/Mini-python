@@ -15,7 +15,7 @@ let makeContainer = text => {
 
   let title = document##createElement("div");
   title##className #= "containerTitle";
-  title##innerText #= text;
+  title##innerText #= text; 
 
   let content = document##createElement("div");
   content##className #= "containerContent";
@@ -49,3 +49,4 @@ ReactDOMRe.render(
   <ReasonUsingJSUsingReason />,
   makeContainer("Reason Using JS Using Reason"),
 );
+
