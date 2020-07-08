@@ -1,11 +1,11 @@
-open Sidewinder.ConfigIR;
+open Sidewinder.ConfigGraphIR;
 
 /* TODO: these transformations assume that the sequences of nodes are lists instead of nested somehow. That needs to be fixed!! */
 
 let rec mergeNone =
         (
-          l1: list(option(Sidewinder.ConfigIR.node)),
-          l2: list(option(Sidewinder.ConfigIR.node)),
+          l1: list(option(Sidewinder.ConfigGraphIR.node)),
+          l2: list(option(Sidewinder.ConfigGraphIR.node)),
         ) =>
   switch (l1, l2) {
   | (l1, []) => l1
@@ -102,7 +102,10 @@ let rec ctxtsToList = ({name, nodes} as ctxts) =>
   };
 
 let rec zipUp =
-        (f: option(Sidewinder.ConfigIR.node), cs: list(option(Sidewinder.ConfigIR.node))) =>
+        (
+          f: option(Sidewinder.ConfigGraphIR.node),
+          cs: list(option(Sidewinder.ConfigGraphIR.node)),
+        ) =>
   switch (cs) {
   | [] => f
   | [c, ...cs] =>
@@ -111,17 +114,17 @@ let rec zipUp =
     | Some(c) =>
       let place =
         switch (f) {
-        | None => None
+        | None => {pat: None, extFns: []}
         | Some(f) =>
-          switch (f.place) {
-          | None => None
+          switch (f.place.pat) {
+          | None => {pat: None, extFns: f.place.extFns}
           /* TODO: need to add into flow */
-          | Some(place) => Some(place ++ ".highlight")
+          | Some(place) => {pat: Some(place ++ ".highlight"), extFns: f.place.extFns}
           }
         };
       let f =
         Some(
-          Sidewinder.ConfigIR.mk(
+          Sidewinder.ConfigGraphIR.mk(
             /* TODO: add to flow!!! */
             /* ~place?, */
             ~name="highlight",

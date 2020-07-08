@@ -70,10 +70,10 @@ By the way, ReasonReact comes with a small [router](https://reasonml.github.io/r
 - [ ] Literals 
 - [ ] Pass statements 
 - [ ] Expression Statements 
-- [ ] Varialbe Accesses 
+- [ ] Variable Accesses 
 - [ ] Numerical Operations 
 - [ ] String Operations
-- [ ] Oject Identity 
+- [ ] Object Identity 
 - [ ] Logical Operators 
 - [ ] Conditional Statements and Expressions
 - [ ] While Loops

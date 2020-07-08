@@ -410,29 +410,31 @@ let rec lookup = (x: vid, env: env): option((value, Sidewinder.Flow.linear)) => 
   let (env_uid, env_val) = env;
   switch (env_val) {
   | Empty => None
-  | Cons((_, {vid: y, value: (v_uid, v_val)}), (_, env_val)) =>
+  | Cons((_, {vid: y, value: (v_uid, _) as v}), (_, env_val)) =>
     let (y_uid, y_val) = y;
+    let (fresh_v_uid, _) as v = v |> valueFromUID |> valueToUID;
     if (x_val == y_val) {
       let fresh = "valLookup_" ++ rauc();
-      switch (v_val) {
-      | VNum((_, n)) =>
-        Some((
-          (fresh, VNum(("valLookup_int_" ++ rauc(), n))), /* hack special-casing so we get a fresh
-           uid for num to avoid duplicated uids later. */
-          [
-            /* [|(x_uid, [fresh]), (env_uid, [fresh])|] */
-            (v_uid, [v_uid, fresh]),
-          ],
-        ))
-      | _ =>
-        Some((
-          (fresh, v_val),
-          [
-            /* [|(x_uid, [fresh]), (env_uid, [fresh])|] */
-            (v_uid, [v_uid, fresh]),
-          ],
-        ))
-      };
+      Some((v, [(v_uid, [fresh_v_uid])]));
+      // switch (v_val) {
+      // | VNum((_, n)) =>
+      //   Some((
+      //     (fresh, VNum(("valLookup_int_" ++ rauc(), n))), /* hack special-casing so we get a fresh
+      //      uid for num to avoid duplicated uids later. */
+      //     [
+      //       /* [|(x_uid, [fresh]), (env_uid, [fresh])|] */
+      //       (v_uid, [v_uid, fresh]),
+      //     ],
+      //   ))
+      // | _ =>
+      //   Some((
+      //     (fresh, v_val),
+      //     [
+      //       /* [|(x_uid, [fresh]), (env_uid, [fresh])|] */
+      //       (v_uid, [v_uid, fresh]),
+      //     ],
+      //   ))
+      // };
     } else {
       lookup(x, (env_uid, env_val));
     };
@@ -440,7 +442,7 @@ let rec lookup = (x: vid, env: env): option((value, Sidewinder.Flow.linear)) => 
 };
 
 /* TODO: improve transition annotations */
-let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) =>
+let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linearExt))) =>
   switch (c) {
   /* val */
   /* | {zipper: {focus: ZExp({op: AExp(Var(x)), args: []}), ctxts}, env, stack} =>
@@ -474,12 +476,15 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
         mkConfig({zipper: mkZipper({focus: mkFocus(Value(v)), ctxts}), env, stack}),
         (
           "var",
-          [
-            (x_uid, []),
-            (ctxts_uid, [ctxts_uid]),
-            (env_uid, [env_uid]),
-            (stack_uid, [stack_uid]),
-          ],
+          {
+            pattern: [
+              (x_uid, []),
+              (ctxts_uid, [ctxts_uid]),
+              (env_uid, [env_uid]),
+              (stack_uid, [stack_uid]),
+            ],
+            extFn: lookup_ribbon,
+          },
           /* TODO: add this back when external functions work */
           /* lookup_ribbon, */
         ),
@@ -520,12 +525,15 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
       }),
       (
         "lam",
-        [
-          (l_uid, [l_uid]),
-          (env_uid, [env_uid, env2_uid]),
-          (ctxts_uid, [ctxts_uid]),
-          (stack_uid, [stack_uid]),
-        ],
+        {
+          pattern: [
+            (l_uid, [l_uid]),
+            (env_uid, [env_uid, env2_uid]),
+            (ctxts_uid, [ctxts_uid]),
+            (stack_uid, [stack_uid]),
+          ],
+          extFn: [],
+        },
       ),
     ));
   /* zipper skip */
@@ -561,12 +569,15 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
       }),
       (
         "zipper skip",
-        [
-          (op_uid, [op_uid]),
-          (ctxts_uid, [ctxts_uid]),
-          (env_uid, [env_uid]),
-          (stack_uid, [stack_uid]),
-        ],
+        {
+          pattern: [
+            (op_uid, [op_uid]),
+            (ctxts_uid, [ctxts_uid]),
+            (env_uid, [env_uid]),
+            (stack_uid, [stack_uid]),
+          ],
+          extFn: [],
+        },
       ),
     ))
   /* zipper begin */
@@ -611,14 +622,17 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
       }),
       (
         "zipper begin",
-        [
-          (op_uid, [op_uid]),
-          (a_uid, [a_uid]),
-          (args_uid, [args_uid]),
-          (ctxts_uid, [ctxts_uid]),
-          (env_uid, [env_uid]),
-          (stack_uid, [stack_uid]),
-        ],
+        {
+          pattern: [
+            (op_uid, [op_uid]),
+            (a_uid, [a_uid]),
+            (args_uid, [args_uid]),
+            (ctxts_uid, [ctxts_uid]),
+            (env_uid, [env_uid]),
+            (stack_uid, [stack_uid]),
+          ],
+          extFn: [],
+        },
       ),
     ))
   /* zipper continue */
@@ -672,16 +686,19 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
       }),
       (
         "zipper continue",
-        [
-          (v_uid, [v_uid]),
-          (op_uid, [op_uid]),
-          (a_uid, [a_uid]),
-          (args_uid, [args_uid]),
-          (values_uid, [values_uid]),
-          (ctxts_uid, [ctxts_uid]),
-          (env_uid, [env_uid]),
-          (stack_uid, [stack_uid]),
-        ],
+        {
+          pattern: [
+            (v_uid, [v_uid]),
+            (op_uid, [op_uid]),
+            (a_uid, [a_uid]),
+            (args_uid, [args_uid]),
+            (values_uid, [values_uid]),
+            (ctxts_uid, [ctxts_uid]),
+            (env_uid, [env_uid]),
+            (stack_uid, [stack_uid]),
+          ],
+          extFn: [],
+        },
       ),
     ))
 
@@ -728,14 +745,17 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
       }),
       (
         "zipper end",
-        [
-          (v_uid, [v_uid]),
-          (op_uid, [op_uid]),
-          (values_uid, [values_uid]),
-          (ctxts_uid, [ctxts_uid]),
-          (env_uid, [env_uid]),
-          (stack_uid, [stack_uid]),
-        ],
+        {
+          pattern: [
+            (v_uid, [v_uid]),
+            (op_uid, [op_uid]),
+            (values_uid, [values_uid]),
+            (ctxts_uid, [ctxts_uid]),
+            (env_uid, [env_uid]),
+            (stack_uid, [stack_uid]),
+          ],
+          extFn: [],
+        },
       ),
     ))
   /* app enter */
@@ -801,15 +821,18 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
       }),
       (
         "app enter",
-        [
-          (v2_uid, [v2_uid]),
-          (x_uid, [x_uid]),
-          (e_uid, [e_uid]),
-          (env_uid, [env_uid]),
-          (ctxts_uid, [ctxts_uid]),
-          (env'_uid, [env'_uid]),
-          (stack_uid, [stack_uid]),
-        ],
+        {
+          pattern: [
+            (v2_uid, [v2_uid]),
+            (x_uid, [x_uid]),
+            (e_uid, [e_uid]),
+            (env_uid, [env_uid]),
+            (ctxts_uid, [ctxts_uid]),
+            (env'_uid, [env'_uid]),
+            (stack_uid, [stack_uid]),
+          ],
+          extFn: [],
+        },
       ),
     ))
   /* app exit */
@@ -828,13 +851,16 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
       mkConfig({zipper: mkZipper({focus: mkFocus(Value(v)), ctxts}), env: env', stack}),
       (
         "app exit",
-        [
-          (v_uid, [v_uid]),
-          (env_uid, []),
-          (ctxts_uid, [ctxts_uid]),
-          (env'_uid, [env'_uid]),
-          (stack_uid, [stack_uid]),
-        ],
+        {
+          pattern: [
+            (v_uid, [v_uid]),
+            (env_uid, []),
+            (ctxts_uid, [ctxts_uid]),
+            (env'_uid, [env'_uid]),
+            (stack_uid, [stack_uid]),
+          ],
+          extFn: [],
+        },
       ),
     ))
   /* let */
@@ -866,14 +892,17 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
       }),
       (
         "let",
-        [
-          (x_uid, [x_uid]),
-          (e2_uid, [e2_uid]),
-          (v1_uid, [v1_uid]),
-          (ctxts_uid, [ctxts_uid]),
-          (env_uid, [env_uid]),
-          (stack_uid, [stack_uid]),
-        ],
+        {
+          pattern: [
+            (x_uid, [x_uid]),
+            (e2_uid, [e2_uid]),
+            (v1_uid, [v1_uid]),
+            (ctxts_uid, [ctxts_uid]),
+            (env_uid, [env_uid]),
+            (stack_uid, [stack_uid]),
+          ],
+          extFn: [],
+        },
       ),
     ))
   /* num */
@@ -899,12 +928,15 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
       }),
       (
         "num",
-        [
-          (n_uid, [n_uid]),
-          (ctxts_uid, [ctxts_uid]),
-          (env_uid, [env_uid]),
-          (stack_uid, [stack_uid]),
-        ],
+        {
+          pattern: [
+            (n_uid, [n_uid]),
+            (ctxts_uid, [ctxts_uid]),
+            (env_uid, [env_uid]),
+            (stack_uid, [stack_uid]),
+          ],
+          extFn: [],
+        },
       ),
     ))
   /* add */
@@ -943,13 +975,17 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
       }),
       (
         "add",
-        [
-          (v1_uid, [v3_uid]),
-          (v2_uid, [v3_uid]),
-          (ctxts_uid, [ctxts_uid]),
-          (env_uid, [env_uid]),
-          (stack_uid, [stack_uid]),
-        ],
+        {
+          pattern: [
+            (v1_uid, [v3_uid]),
+            (v2_uid, [v3_uid]),
+            /* TODO: op should also go to v3_uid? */
+            (ctxts_uid, [ctxts_uid]),
+            (env_uid, [env_uid]),
+            (stack_uid, [stack_uid]),
+          ],
+          extFn: [],
+        },
       ),
     ));
   /* bracket */
@@ -970,22 +1006,26 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
       env: (env_uid, _) as env,
       stack: (stack_uid, _) as stack,
     } =>
+    let (env2_uid, _) as env2 = envToUID(envFromUID(env)); /* use `from` and `to` to scrub all copied IDs */
     Some((
       mkConfig({
         zipper: mkZipper({focus: mkFocus(ZExp(e)), ctxts: mkCtxts(Empty)}),
-        env,
+        env: env2,
         stack: mkStack(Cons(mkFrame({ctxts, env}), stack)),
       }),
       (
         "bracket",
-        [
-          (e_uid, [e_uid]),
-          (ctxts_uid, [ctxts_uid]),
-          (env_uid, [env_uid]),
-          (stack_uid, [stack_uid]),
-        ],
+        {
+          pattern: [
+            (e_uid, [e_uid]),
+            (ctxts_uid, [ctxts_uid]),
+            (env_uid, [env_uid, env2_uid]),
+            (stack_uid, [stack_uid]),
+          ],
+          extFn: [],
+        },
       ),
-    ))
+    ));
   /* lift */
   | {
       zipper: (
@@ -1005,12 +1045,15 @@ let step = ((_, c): config): option((config, (string, Sidewinder.Flow.linear))) 
       mkConfig({zipper: mkZipper({focus: mkFocus(ZExp(ae)), ctxts}), env, stack}),
       (
         "lift",
-        [
-          (ae_uid, [ae_uid]),
-          (ctxts_uid, [ctxts_uid]),
-          (env_uid, [env_uid]),
-          (stack_uid, [stack_uid]),
-        ],
+        {
+          pattern: [
+            (ae_uid, [ae_uid]),
+            (ctxts_uid, [ctxts_uid]),
+            (env_uid, [env_uid]),
+            (stack_uid, [stack_uid]),
+          ],
+          extFn: [],
+        },
       ),
     ))
   | _ => None
@@ -1071,7 +1114,7 @@ let rec iterateMaybeSideEffect = (f: 'a => option(('a, 'b)), x: 'a): (list('a), 
     ([x, ...als], [b, ...bls]);
   };
 
-let interpretTrace = (p: ZED.exp): (list((string, Sidewinder.Flow.linear)), list(config)) => {
+let interpretTrace = (p: ZED.exp): (list((string, Sidewinder.Flow.linearExt)), list(config)) => {
   let (states, rules) = iterateMaybeSideEffect(step, inject(p));
   // Js.log2("rules", rules |> Array.of_list);
   let (actualRules, flow) = rules |> List.split;
