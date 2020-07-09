@@ -20,10 +20,10 @@ type loc = int;
 type env = list((vid, loc));
 
 type value = 
-| VNone 
-| VBool(bool)
-| VInt(int)
-| VString(int, string);
+| NoneLiteral
+| BooleanLiteral(bool)
+| IntegerLiteral(int)
+| StringLiteral(int, string);
 
 
 type store = list((loc, value));
@@ -36,8 +36,8 @@ type exp =
 | String(string);
 
 /* exp -> val */
-/* None -> VNone */
-/* False -> VBool(false) */
+/* None -> NoneLiteral*/
+/* False -> BooleanLiteral(false) */
 
 type focus =
 | Exp(exp)
@@ -54,15 +54,15 @@ type config = {
 let step = (c: config): option(config) =>
   switch (c) {
     /* NONE */
-    | {focus: Exp(ENone), env, store, glob} => Some({focus: Value(VNone), env, store, glob})
+    | {focus: Exp(ENone), env, store, glob} => Some({focus: Value(NoneLiteral), env, store, glob})
     /* BOOL-FALSE */
-    | {focus: Exp(False), env, store, glob} => Some({focus: Value(VBool(false)), env, store, glob})
+    | {focus: Exp(False), env, store, glob} => Some({focus: Value(BooleanLiteral(false)), env, store, glob})
     /* BOOL-TRUE */
-    | {focus: Exp(True), env, store, glob} => Some({focus: Value(VBool(true)), env, store, glob})
+    | {focus: Exp(True), env, store, glob} => Some({focus: Value(BooleanLiteral(true)), env, store, glob})
     /* INT */
-    | {focus: Exp(Int(int)), env, store, glob} => Some({focus: Value(VInt(int)), env, store, glob})
+    | {focus: Exp(Int(int)), env, store, glob} => Some({focus: Value(IntegerLiteral(int)), env, store, glob})
     /* STR */
-    | {focus: Exp(String(string)), env, store, glob} => Some({focus: Value(VString(String.length(string), string)), env, store, glob})
+    | {focus: Exp(String(string)), env, store, glob} => Some({focus: Value(StringLiteral(String.length(string), string)), env, store, glob})
     | _ => None
   };
 
