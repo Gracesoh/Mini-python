@@ -50,13 +50,19 @@ type config = {
     glob,
 };
 
+
 let step = (c: config): option(config) =>
   switch (c) {
     /* NONE */
     | {focus: Exp(ENone), env, store, glob} => Some({focus: Value(VNone), env, store, glob})
     /* BOOL-FALSE */
     | {focus: Exp(False), env, store, glob} => Some({focus: Value(VBool(false)), env, store, glob})
-    /* TODO: other literals */
+    /* BOOL-TRUE */
+    | {focus: Exp(True), env, store, glob} => Some({focus: Value(VBool(true)), env, store, glob})
+    /* INT */
+    | {focus: Exp(Int(int)), env, store, glob} => Some({focus: Value(VInt(int)), env, store, glob})
+    /* STR */
+    | {focus: Exp(String(string)), env, store, glob} => Some({focus: Value(VString(String.length(string), string)), env, store, glob})
     | _ => None
   };
 
@@ -76,7 +82,6 @@ let inject = (e: exp): config => {
   | {zipper: {focus: Value(_), ctxts: []}, env: _, stack: []} => true
   | _ => false
   }; */
-
 let isFinal = (c: config): bool => false;
 
 let rec iterateMaybeAux = (f, x) =>

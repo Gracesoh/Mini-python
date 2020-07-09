@@ -62,6 +62,7 @@ let makeContainer = text => {
 //   makeContainer("Lift(Bracket(Lift(ae)))"),
 // );
 
+/* ENONE */
 ReactDOMRe.render(
   <VizTrace
     program={MiniPython.ENone}
@@ -69,10 +70,34 @@ ReactDOMRe.render(
   makeContainer("ENone"),
 );
 
+/* BOOL-FALSE */
 ReactDOMRe.render(
   <VizTrace
     program={MiniPython.False}
   />,
-  makeContainer("false"),
+  makeContainer("False"),
 );
 
+ /* BOOL-TRUE */
+ReactDOMRe.render(
+  <VizTrace
+    program={MiniPython.True}
+  />,
+  makeContainer("True"),
+);
+
+/* INT */
+ ReactDOMRe.render(
+   <VizTrace
+     program={MiniPython.Int(5)}
+   />,
+   makeContainer("Int"),
+);
+
+/* STR */
+ ReactDOMRe.render(
+   <VizTrace
+     program={MiniPython.String("Hello")}
+   />,
+   makeContainer("String"),
+);
