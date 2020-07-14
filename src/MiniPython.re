@@ -20,31 +20,93 @@ type loc = int;
 type env = list((vid, loc));
 
 type value = 
-| NoneLiteral
-| BooleanLiteral(bool)
-| IntegerLiteral(int)
-| StringLiteral(int, string);
+| VNone
+| VBool(bool)
+| VInt(int)
+| VString(int, string);
 
 
 type store = list((loc, value));
 type glob = env;
+
+/* 
+input: 1 + 1
+
+{
+  "kind" : "Program",
+  "location" : [ 1, 1, 1, 6 ],
+  "declarations" : [ ],
+  "statements" : [ {
+    "kind" : "ExprStmt",
+    "location" : [ 1, 1, 1, 5 ],
+    "expr" : {
+      "kind" : "BinaryExpr",
+      "location" : [ 1, 1, 1, 5 ],
+      "left" : {
+        "kind" : "VInt",
+        "location" : [ 1, 1, 1, 1 ],
+        "value" : 1
+      },
+      "operator" : "+",
+      "right" : {
+        "kind" : "VInt",
+        "location" : [ 1, 5, 1, 5 ],
+        "value" : 1
+      }
+    }
+  } ],
+  "errors" : {
+    "errors" : [ ],
+    "kind" : "Errors",
+    "location" : [ 0, 0, 0, 0 ]
+  }
+}
+
+ */
+
+type binary_op =
+| Add;
+
 type exp = 
-| ENone 
-| False 
-| True 
-| Int(int)
-| String(string);
+| NoneLiteral
+| BooleanLiteral(bool)
+| IntegerLiteral(int)
+| StringLiteral(string)
+| BinaryExpr(binary_expr)
+
+and binary_expr = {left: exp, binary_op, right: exp};
+
+type binary_ctxt_left = {left: unit, binary_op, right: exp};
+type binary_ctxt_right = {left: value, binary_op, right: unit};
+/* {focus: IntLiteral(6), ctxts: [{left: Int(5), binary_op: Add, right: ()}]} */
+
+type binary_ctxt =
+| BCtxtLeft(binary_ctxt_left) 
+| BCtxtRight(binary_ctxt_right);
+
+type binary_preval = {left: value, binary_op, right: value};
+
+type preval =
+| PVBinary(binary_preval);
 
 /* exp -> val */
-/* None -> NoneLiteral*/
-/* False -> BooleanLiteral(false) */
+/* None -> VNone*/
+/* False -> VBool(false) */
 
 type focus =
 | Exp(exp)
-| Value(value);
+| Value(value)
+| PreVal(preval);
+
+type ctxts = list(unit /* TODO */);
+
+type zipper = {
+  focus,
+  ctxts,
+};
 
 type config = {
-    focus,
+    zipper,
     env,
     store,
     glob,
@@ -53,21 +115,22 @@ type config = {
 
 let step = (c: config): option(config) =>
   switch (c) {
+    /* zipper begin */
+    /* zipper continue */
+    /* zipper end */
     /* NONE */
-    | {focus: Exp(ENone), env, store, glob} => Some({focus: Value(NoneLiteral), env, store, glob})
-    /* BOOL-FALSE */
-    | {focus: Exp(False), env, store, glob} => Some({focus: Value(BooleanLiteral(false)), env, store, glob})
-    /* BOOL-TRUE */
-    | {focus: Exp(True), env, store, glob} => Some({focus: Value(BooleanLiteral(true)), env, store, glob})
+    | {zipper: {focus: Exp(NoneLiteral), ctxts}, env, store, glob} => Some({zipper: {focus: Value(VNone), ctxts}, env, store, glob})
+    /* BOOL-TRUE and BOOL-FALSE */
+    | {zipper: {focus: Exp(BooleanLiteral(bool)), ctxts}, env, store, glob} => Some({zipper: {focus: Value(VBool(bool)), ctxts},  env, store, glob})
     /* INT */
-    | {focus: Exp(Int(int)), env, store, glob} => Some({focus: Value(IntegerLiteral(int)), env, store, glob})
+    | {zipper: {focus: Exp(IntegerLiteral(int)), ctxts}, env, store, glob} => Some({zipper: {focus: Value(VInt(int)), ctxts}, env, store, glob})
     /* STR */
-    | {focus: Exp(String(string)), env, store, glob} => Some({focus: Value(StringLiteral(String.length(string), string)), env, store, glob})
+    | {zipper: {focus: Exp(StringLiteral(string)), ctxts}, env, store, glob} => Some({zipper: {focus: Value(VString(String.length(string), string)), ctxts}, env, store, glob})
     | _ => None
   };
 
 let inject = (e: exp): config => {
-  focus: Exp(e),
+  zipper: {focus: Exp(e), ctxts: []},
   env: [],
   store: [],
   glob: [],
